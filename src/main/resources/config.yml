@@ -1,0 +1,19 @@
+placementQueue:
+  enabled: true
+  maxBlocksPerTick: 20 # max blocks to place per tick
+wands:
+  1:
+    name: "&3Builders Wand"
+    material: "BLAZE_ROD"
+    lore:
+      - "&7A powerful wand for building!"
+      - "&7Use it wisely."
+    maxSize: 8
+    maxSizeText: "&3Max Size: {maxSizeText}"
+    maxRayTraceDistance: 16
+    consumeItems: true
+    durability:
+      amount: 100
+      enabled: true
+      text: "&3Durability: {durability}"
+    cooldown: 2 # in seconds

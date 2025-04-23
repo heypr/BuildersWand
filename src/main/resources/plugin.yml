@@ -1,0 +1,21 @@
+name: BuildersWand
+version: '1.0.0'
+main: dev.heypr.buildersWand.BuildersWand
+api-version: '1.21'
+prefix: BuildersWand
+softdepend:
+  - SuperiorSkyblock2
+load: STARTUP
+commands:
+  givewand:
+    description: Give yourself a Builders Wand
+    usage: /givewand <wand_id>
+    permission: builderswand.give
+  reloadbuilderswand:
+    description: Reload the BuildersWand configuration
+    usage: /reloadbuilderswand
+    permission: builderswand.reload
+    aliases:
+      - rbw
+      - reloadbw
+      - reloadwands
