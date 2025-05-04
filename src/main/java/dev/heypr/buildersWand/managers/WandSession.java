@@ -14,4 +14,5 @@ public class WandSession {
     public BukkitRunnable particleTask;
     public long lastRightClickTime = 0L;
     public boolean placing = false;
+    public boolean initialPlace = true;
 }

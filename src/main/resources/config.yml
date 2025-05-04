@@ -12,6 +12,7 @@ wands:
     maxSizeText: "&3Max Size: {maxSizeText}"
     maxRayTraceDistance: 16
     consumeItems: true
+    generatePreviewOnMove: false
     durability:
       amount: 100
       enabled: true

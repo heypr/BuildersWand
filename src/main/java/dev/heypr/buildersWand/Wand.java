@@ -17,6 +17,7 @@ public class Wand {
     private final String maxSizeText;
     private final int maxRayTraceDistance;
     private final boolean consumesItems;
+    private final boolean generatePreviewOnMove;
     private final int durabilityAmount;
     private final boolean durabilityEnabled;
     private final String durabilityText;
@@ -30,6 +31,7 @@ public class Wand {
                 String maxSizeText,
                 int maxRayTraceDistance,
                 boolean consumesItems,
+                boolean generatePreviewOnMove,
                 int durabilityAmount,
                 boolean durabilityEnabled,
                 String durabilityText,
@@ -42,6 +44,7 @@ public class Wand {
         this.maxSizeText = maxSizeText;
         this.maxRayTraceDistance = maxRayTraceDistance;
         this.consumesItems = consumesItems;
+        this.generatePreviewOnMove = generatePreviewOnMove;
         this.durabilityAmount = durabilityAmount;
         this.durabilityEnabled = durabilityEnabled;
         this.durabilityText = durabilityText;
@@ -92,6 +95,10 @@ public class Wand {
 
     public boolean consumesItems() {
         return consumesItems;
+    }
+
+    public boolean generatePreviewOnMove() {
+        return generatePreviewOnMove;
     }
 
     public int getDurabilityAmount() {

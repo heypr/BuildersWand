@@ -47,6 +47,7 @@ public class ConfigManager {
             String maxSizeText = config.getString("wands." + wandKey + ".maxSizeText", "&3Max Size: {maxSizeText}");
             int maxRayTraceDistance = config.getInt("wands." + wandKey + ".maxRayTraceDistance", 16);
             boolean consumeItems = config.getBoolean("wands." + wandKey + ".consumeItems", true);
+            boolean generatePreviewOnMove = config.getBoolean("wands." + wandKey + ".generatePreviewOnMove", false);
 
             int durabilityAmount = config.getInt("wands." + wandKey + ".durability.amount", 100);
             boolean durabilityEnabled = config.getBoolean("wands." + wandKey + ".durability.enabled", true);
@@ -54,7 +55,7 @@ public class ConfigManager {
             float cooldown = config.getInt("wands." + wandKey + ".cooldown", 0);
 
             Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, maxSize, maxSizeText, maxRayTraceDistance,
-                    consumeItems, durabilityAmount, durabilityEnabled, durabilityText, cooldown);
+                    consumeItems, generatePreviewOnMove, durabilityAmount, durabilityEnabled, durabilityText, cooldown);
 
             wandConfigs.put(wandId, wand);
             wandList.add(wand);

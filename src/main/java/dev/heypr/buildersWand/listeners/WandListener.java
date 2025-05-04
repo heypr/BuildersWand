@@ -8,6 +8,8 @@ import dev.heypr.buildersWand.managers.ConfigManager;
 import dev.heypr.buildersWand.managers.PlacementQueueManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.managers.WandSession;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -20,6 +22,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 
@@ -29,6 +32,8 @@ public class WandListener implements Listener {
     private static WandListener instance;
     private final Set<Block> extrudedBlocks = new HashSet<>();
     private final Map<UUID, WandSession> sessions = new HashMap<>();
+    private static final Component PREFIX = Component.text("[BuildersWand] ").color(NamedTextColor.AQUA);
+    NamespacedKey itemKey = new NamespacedKey(BuildersWand.getInstance(), "builderswand");
 
     public WandListener() {
         instance = this;
@@ -44,7 +49,7 @@ public class WandListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (event.getItemInHand().equals(new ItemStack(Material.STRUCTURE_VOID))) {
+        if (event.getItemInHand().getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE)) {
             event.setCancelled(true);
         }
     }
@@ -54,58 +59,144 @@ public class WandListener implements Listener {
         Player player = event.getPlayer();
 
         ItemStack wandItem = player.getInventory().getItemInMainHand();
-        WandSession session = getSession(player);
         if (!WandManager.isWand(wandItem)) {
-            session.previewBlocks.clear();
-            session.lastTargetBlock = null;
-            session.lastTargetFace = null;
+            sessions.remove(player.getUniqueId());
             return;
         }
 
         Wand wand = WandManager.getWand(wandItem);
 
-        RayTraceResult rtr = player.rayTraceBlocks(wand.getMaxRayTraceDistance(), FluidCollisionMode.NEVER);
-        if (rtr == null || rtr.getHitBlock() == null || rtr.getHitBlockFace() == null) return;
+        if (wand.generatePreviewOnMove()) generatePreview(player, wand);
+    }
 
-        if (session.placing) return;
+    @EventHandler
+    public void onPlayerRightClick(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        ItemStack wandItem = player.getInventory().getItemInMainHand();
+        if (!WandManager.isWand(wandItem)) return;
 
-        Block hitBlock = rtr.getHitBlock();
-        BlockFace face = rtr.getHitBlockFace();
+        Wand wand = WandManager.getWand(wandItem);
+        if (!event.getAction().isRightClick() || event.getHand() != EquipmentSlot.HAND) return;
 
-        if (hitBlock.equals(session.lastTargetBlock) && face == session.lastTargetFace) return;
+        event.setCancelled(true);
+        WandSession session = getSession(player);
 
-        session.lastTargetBlock = hitBlock;
-        session.lastTargetFace = face;
-
-        extrudedBlocks.clear();
-        //TODO: make this async
-
-        getExtrudedPlane(hitBlock, face, hitBlock.getType(), wand.getMaxSize());
-        Set<Block> placementPreview = new HashSet<>();
-        for (Block b : extrudedBlocks) {
-            Block target = b.getRelative(face);
-            if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) continue;
-            BlockPlaceEvent blockPlaceEvent = new BlockPlaceEvent(target, target.getState(), hitBlock, new ItemStack(Material.STRUCTURE_VOID), player, true, EquipmentSlot.HAND);
-            Bukkit.getServer().getPluginManager().callEvent(blockPlaceEvent);
-
-            if ((target.getType().isAir() || isReplaceable(target.getType()))
-                    && target.getType() == Material.AIR) {
-                placementPreview.add(target);
-            }
+        if (session.placing) {
+            player.sendActionBar(PREFIX.append(Component.text("Wand is still placing blocks, please wait...").color(NamedTextColor.RED)));
+            return;
         }
 
-        //TODO: end
+        if (session.previewBlocks.isEmpty()) {
+            generatePreview(player, wand);
+            if (session.previewBlocks.isEmpty()) {
+                player.sendActionBar(PREFIX.append(Component.text("No blocks available for preview.").color(NamedTextColor.RED)));
+            }
+            else {
+                player.sendActionBar(PREFIX.append(Component.text("Preview generated. Right-click again to place.").color(NamedTextColor.YELLOW)));
+            }
+            return;
+        }
 
         long now = System.currentTimeMillis();
         long last = session.lastRightClickTime;
         float cooldown = wand.getCooldown() * 1000L;
 
         if (now - last < cooldown) {
-            player.sendActionBar(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again.");
+            player.sendActionBar(PREFIX.append(Component.text("Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again.").color(NamedTextColor.RED)));
             return;
         }
 
-        session.previewBlocks = placementPreview;
+        if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
+            int available = getItemCount(player, session.lastTargetBlock.getType());
+            int needed = session.previewBlocks.size();
+
+            if (available < needed) {
+                player.sendMessage(PREFIX.append(Component.text("You need " + (needed - available) + " more " + session.lastTargetBlock.getType().name() + " blocks.").color(NamedTextColor.RED)));
+                return;
+            }
+            removeItems(player, session.lastTargetBlock.getType(), needed);
+        }
+
+        session.lastRightClickTime = now;
+
+        if (ConfigManager.isPlacementQueueEnabled()) {
+            new PlacementQueueManager(player, session.previewBlocks, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
+        }
+        else {
+            for (Block block : session.previewBlocks) {
+                block.setType(session.lastTargetBlock.getType(), true);
+            }
+        }
+
+        BlockPlaceEvent bpe = new BlockPlaceEvent(session.lastTargetBlock, session.lastTargetBlock.getState(), session.lastTargetBlock, new ItemStack(session.lastTargetBlock.getType()), player, true, EquipmentSlot.HAND);
+        Bukkit.getServer().getPluginManager().callEvent(bpe);
+
+        session.previewBlocks.clear();
+        session.lastTargetBlock = null;
+        session.lastTargetFace = null;
+
+        if (WandManager.isWandDurabilityEnabled(wandItem)) {
+            if (WandManager.getWandDurability(wandItem) <= 1) {
+                player.getInventory().removeItem(wandItem);
+            }
+            else {
+                WandManager.decrementWandDurability(wandItem);
+            }
+        }
+        else {
+            WandManager.handleInfiniteDurability(wandItem);
+        }
+
+        if (!wand.generatePreviewOnMove()) {
+            session.initialPlace = true;
+        }
+    }
+
+    public void generatePreview(Player player, Wand wand) {
+        RayTraceResult rtr = player.rayTraceBlocks(wand.getMaxRayTraceDistance(), FluidCollisionMode.NEVER);
+        if (rtr == null || rtr.getHitBlock() == null || rtr.getHitBlockFace() == null) return;
+
+        WandSession session = getSession(player);
+
+        if (session.placing) return;
+
+
+        Block hitBlock = rtr.getHitBlock();
+        BlockFace face = rtr.getHitBlockFace();
+
+        if (hitBlock.equals(session.lastTargetBlock) && face == session.lastTargetFace) return;
+
+        session.previewBlocks.clear();
+        session.lastTargetBlock = hitBlock;
+        session.lastTargetFace = face;
+
+        extrudedBlocks.clear();
+
+        getExtrudedPlane(hitBlock, face, hitBlock.getType(), wand.getMaxSize());
+
+        ItemStack item = new ItemStack(hitBlock.getType());
+        item.editMeta(meta -> meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1));
+
+        for (Block b : extrudedBlocks) {
+            Block target = b.getRelative(face);
+            if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) continue;
+            BlockPlaceEvent blockPlaceEvent = new BlockPlaceEvent(target, target.getState(), hitBlock, item, player, true, EquipmentSlot.HAND);
+            Bukkit.getServer().getPluginManager().callEvent(blockPlaceEvent);
+
+            if ((target.getType().isAir() || isReplaceable(target.getType()))
+                    && target.getType() == Material.AIR) {
+                session.previewBlocks.add(target);
+            }
+        }
+
+        long now = System.currentTimeMillis();
+        long last = session.lastRightClickTime;
+        float cooldown = wand.getCooldown() * 1000L;
+
+        if (now - last < cooldown) {
+            player.sendActionBar(PREFIX.append(Component.text("Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again.").color(NamedTextColor.RED)));
+            return;
+        }
 
         if (session.particleTask != null) {
             session.particleTask.cancel();
@@ -119,7 +210,7 @@ public class WandListener implements Listener {
                     return;
                 }
 
-                if (placementPreview.isEmpty()) {
+                if (session.previewBlocks.isEmpty()) {
                     this.cancel();
                     return;
                 }
@@ -128,7 +219,7 @@ public class WandListener implements Listener {
                 if (!WandManager.isWand(wandItem)) this.cancel();
 
                 World world = hitBlock.getWorld();
-                List<Block> locations = new ArrayList<>(placementPreview);
+                List<Block> locations = new ArrayList<>(session.previewBlocks);
 
                 for (Block preview : locations) {
                     Location loc = preview.getLocation();
@@ -145,107 +236,24 @@ public class WandListener implements Listener {
         session.particleTask = task;
     }
 
-    @EventHandler
-    public void onPlayerRightClick(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
-
-        ItemStack wandItem = player.getInventory().getItemInMainHand();
-        if (!WandManager.isWand(wandItem)) return;
-
-        Wand wand = WandManager.getWand(wandItem);
-
-        if (!event.getAction().isRightClick() || event.getHand() != EquipmentSlot.HAND) return;
-
-        WandSession session = getSession(player);
-
-        if (session.placing) {
-            player.sendActionBar(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Wand is still placing blocks, please wait...");
-            return;
-        }
-
-        long now = System.currentTimeMillis();
-        long last = session.lastRightClickTime;
-        float cooldown = wand.getCooldown() * 1000L;
-
-        if (now - last < cooldown) {
-            player.sendActionBar(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again.");
-            return;
-        }
-
-        session.lastRightClickTime = now;
-
-        event.setCancelled(true);
-
-        Set<Block> previewBlocks = session.previewBlocks;
-
-        if (previewBlocks == null || previewBlocks.isEmpty()) {
-            return;
-        }
-
-        RayTraceResult rtr = player.rayTraceBlocks(wand.getMaxRayTraceDistance(), FluidCollisionMode.NEVER);
-        if (rtr == null || rtr.getHitBlock() == null || rtr.getHitBlockFace() == null) return;
-
-        Material material = rtr.getHitBlock().getType();
-
-        if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
-            int available = getItemCount(player, material);
-            int needed = previewBlocks.size();
-
-            if (available < needed) {
-                player.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "You need " + (needed - available) + " more " + material.name() + " blocks.");
-                return;
-            }
-            removeItems(player, material, needed);
-        }
-
-        if (session.placing) return;
-        if (ConfigManager.isPlacementQueueEnabled()) {
-            PlacementQueueManager queue = new PlacementQueueManager(player, session.previewBlocks, material, ConfigManager.getMaxBlocksPerTick());
-            queue.start();
-        }
-        else {
-            for (Block block : previewBlocks) {
-                block.setType(material, true);
-            }
-        }
-
-        BlockPlaceEvent bpe = new BlockPlaceEvent(rtr.getHitBlock(), rtr.getHitBlock().getState(), rtr.getHitBlock(), new ItemStack(rtr.getHitBlock().getType()), player, true, EquipmentSlot.HAND);
-        Bukkit.getServer().getPluginManager().callEvent(bpe);
-
-        session.previewBlocks.clear();
-        session.lastTargetBlock = null;
-        session.lastTargetFace = null;
-        if (WandManager.isWandDurabilityEnabled(wandItem)) {
-            if (WandManager.getWandDurability(wandItem) <= 1) {
-                player.getInventory().removeItem(wandItem);
-            }
-            else {
-                WandManager.decrementWandDurability(wandItem);
-            }
-        }
-        else {
-            WandManager.handleInfiniteDurability(wandItem);
-        }
-    }
-
     private boolean isInsideIsland(Location location) {
         Island island = SuperiorSkyblockAPI.getIslandAt(location);
         return island != null && island.isInsideRange(location);
     }
 
     public void getExtrudedPlane(Block origin, BlockFace face, Material type, int max) {
-        Queue<Block> queue = new LinkedList<>();
+        Deque<Block> stack = new ArrayDeque<>();
         Set<Block> visited = new HashSet<>();
-        queue.add(origin);
+        stack.push(origin);
         visited.add(origin);
 
-        while (!queue.isEmpty() && visited.size() < max) {
-            Block current = queue.poll();
+        while (!stack.isEmpty() && visited.size() < max) {
+            Block current = stack.pop();
             extrudedBlocks.add(current);
             for (BlockFace dir : getPlaneDirections(face)) {
                 Block neighbor = current.getRelative(dir);
                 if (!visited.contains(neighbor) && neighbor.getType().equals(type)) {
-                    queue.add(neighbor);
+                    stack.push(neighbor);
                     visited.add(neighbor);
                 }
             }
