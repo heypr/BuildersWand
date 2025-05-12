@@ -2,6 +2,12 @@ package dev.heypr.buildersWand.listeners;
 
 import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
 import com.bgsoftware.superiorskyblock.api.island.Island;
+import com.sk89q.worldedit.bukkit.BukkitAdapter;
+import com.sk89q.worldguard.LocalPlayer;
+import com.sk89q.worldguard.WorldGuard;
+import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
+import com.sk89q.worldguard.protection.regions.RegionContainer;
+import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Wand;
 import dev.heypr.buildersWand.managers.ConfigManager;
@@ -15,14 +21,12 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 
@@ -33,7 +37,6 @@ public class WandListener implements Listener {
     private final Set<Block> extrudedBlocks = new HashSet<>();
     private final Map<UUID, WandSession> sessions = new HashMap<>();
     private static final Component PREFIX = Component.text("[BuildersWand] ").color(NamedTextColor.AQUA);
-    NamespacedKey itemKey = new NamespacedKey(BuildersWand.getInstance(), "builderswand");
 
     public WandListener() {
         instance = this;
@@ -45,13 +48,6 @@ public class WandListener implements Listener {
 
     private WandSession getSession(Player player) {
         return sessions.computeIfAbsent(player.getUniqueId(), k -> new WandSession());
-    }
-
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent event) {
-        if (event.getItemInHand().getPersistentDataContainer().has(itemKey, PersistentDataType.BYTE)) {
-            event.setCancelled(true);
-        }
     }
 
     @EventHandler
@@ -69,7 +65,7 @@ public class WandListener implements Listener {
         if (wand.generatePreviewOnMove()) generatePreview(player, wand);
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onPlayerRightClick(PlayerInteractEvent event) {
         Player player = event.getPlayer();
         ItemStack wandItem = player.getInventory().getItemInMainHand();
@@ -131,6 +127,8 @@ public class WandListener implements Listener {
         BlockPlaceEvent bpe = new BlockPlaceEvent(session.lastTargetBlock, session.lastTargetBlock.getState(), session.lastTargetBlock, new ItemStack(session.lastTargetBlock.getType()), player, true, EquipmentSlot.HAND);
         Bukkit.getServer().getPluginManager().callEvent(bpe);
 
+        if (bpe.isCancelled()) return;
+
         session.previewBlocks.clear();
         session.lastTargetBlock = null;
         session.lastTargetFace = null;
@@ -174,14 +172,10 @@ public class WandListener implements Listener {
 
         getExtrudedPlane(hitBlock, face, hitBlock.getType(), wand.getMaxSize());
 
-        ItemStack item = new ItemStack(hitBlock.getType());
-        item.editMeta(meta -> meta.getPersistentDataContainer().set(itemKey, PersistentDataType.BYTE, (byte) 1));
-
         for (Block b : extrudedBlocks) {
             Block target = b.getRelative(face);
             if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) continue;
-            BlockPlaceEvent blockPlaceEvent = new BlockPlaceEvent(target, target.getState(), hitBlock, item, player, true, EquipmentSlot.HAND);
-            Bukkit.getServer().getPluginManager().callEvent(blockPlaceEvent);
+            if (BuildersWand.isWorldGuardEnabled() && !checkWG(player, target.getLocation())) continue;
 
             if ((target.getType().isAir() || isReplaceable(target.getType()))
                     && target.getType() == Material.AIR) {
@@ -234,6 +228,15 @@ public class WandListener implements Listener {
         };
         task.runTaskTimer(BuildersWand.getInstance(), 0L, 5L);
         session.particleTask = task;
+    }
+
+    private boolean checkWG(Player player, Location location) {
+        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
+        com.sk89q.worldedit.util.Location wgLocation = BukkitAdapter.adapt(location);
+        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
+        RegionQuery query = container.createQuery();
+
+        return query.testBuild(wgLocation, localPlayer);
     }
 
     private boolean isInsideIsland(Location location) {

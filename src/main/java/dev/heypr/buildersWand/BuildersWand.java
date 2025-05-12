@@ -1,5 +1,6 @@
 package dev.heypr.buildersWand;
 
+import com.sk89q.worldguard.WorldGuard;
 import dev.heypr.buildersWand.commands.GiveWandCommand;
 import dev.heypr.buildersWand.commands.ReloadWandCommand;
 import dev.heypr.buildersWand.listeners.WandListener;
@@ -50,5 +51,9 @@ public class BuildersWand extends JavaPlugin {
 
     public static boolean isSkyblockEnabled() {
         return Bukkit.getPluginManager().isPluginEnabled("SuperiorSkyblock2");
+    }
+
+    public static boolean isWorldGuardEnabled() {
+        return WorldGuard.getInstance() != null;
     }
 }
