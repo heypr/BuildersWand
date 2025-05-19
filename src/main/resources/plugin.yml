@@ -3,10 +3,10 @@ version: '1.0.0'
 main: dev.heypr.buildersWand.BuildersWand
 api-version: '1.21'
 prefix: BuildersWand
-depend:
-  - WorldGuard
 softdepend:
   - SuperiorSkyblock2
+  - WorldGuard
+  - Lands
 load: STARTUP
 commands:
   givewand:

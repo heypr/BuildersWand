@@ -1,8 +1,6 @@
 package dev.heypr.buildersWand;
 
-import dev.heypr.buildersWand.managers.ConfigManager;
 import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
@@ -22,6 +20,7 @@ public class Wand {
     private final boolean durabilityEnabled;
     private final String durabilityText;
     private final float cooldown;
+    private final List<Material> blockedMaterials;
 
     public Wand(int id,
                 String name,
@@ -35,7 +34,8 @@ public class Wand {
                 int durabilityAmount,
                 boolean durabilityEnabled,
                 String durabilityText,
-                float cooldown) {
+                float cooldown,
+                List<Material> blockedMaterials) {
         this.id = id;
         this.name = name;
         this.material = material;
@@ -49,6 +49,7 @@ public class Wand {
         this.durabilityEnabled = durabilityEnabled;
         this.durabilityText = durabilityText;
         this.cooldown = cooldown;
+        this.blockedMaterials = blockedMaterials;
     }
 
     public int getId() {
@@ -56,11 +57,7 @@ public class Wand {
     }
 
     public TextComponent getName() {
-        return ConfigManager.deserializeToComponent(name).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-    }
-
-    public String getRawName() {
-        return name;
+        return Util.toComponent(name);
     }
 
     public Material getMaterial() {
@@ -69,12 +66,8 @@ public class Wand {
 
     public List<TextComponent> getLore() {
         List<TextComponent> finalLore = new ArrayList<>();
-        for (String line : lore) finalLore.add(ConfigManager.deserializeToComponent(line).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
+        for (String line : lore) finalLore.add(Util.toComponent(line));
         return finalLore;
-    }
-
-    public List<String> getRawLore() {
-        return lore;
     }
 
     public int getMaxSize() {
@@ -82,11 +75,7 @@ public class Wand {
     }
 
     public TextComponent getMaxSizeText() {
-        return ConfigManager.deserializeToComponent(maxSizeText).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-    }
-
-    public String getRawMaxSizeText() {
-        return maxSizeText;
+        return Util.toComponent(maxSizeText);
     }
 
     public int getMaxRayTraceDistance() {
@@ -110,14 +99,14 @@ public class Wand {
     }
 
     public TextComponent getDurabilityText() {
-        return ConfigManager.deserializeToComponent(durabilityText).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
-    }
-
-    public String getRawDurabilityText() {
-        return durabilityText;
+        return Util.toComponent(durabilityText);
     }
 
     public float getCooldown() {
         return cooldown;
+    }
+
+    public List<Material> getBlockedMaterials() {
+        return blockedMaterials;
     }
 }

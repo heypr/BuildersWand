@@ -9,7 +9,7 @@ wands:
       - "&7A powerful wand for building!"
       - "&7Use it wisely."
     maxSize: 8
-    maxSizeText: "&3Max Size: {maxSizeText}"
+    maxSizeText: "&3Max Size: {maxSize}"
     maxRayTraceDistance: 16
     consumeItems: true
     generatePreviewOnMove: false
@@ -18,3 +18,6 @@ wands:
       enabled: true
       text: "&3Durability: {durability}"
     cooldown: 2 # in seconds
+    blockedMaterials:
+      - BEDROCK
+      - BARRIER

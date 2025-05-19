@@ -54,6 +54,10 @@ public class BuildersWand extends JavaPlugin {
     }
 
     public static boolean isWorldGuardEnabled() {
-        return WorldGuard.getInstance() != null;
+        return Bukkit.getPluginManager().isPluginEnabled("WorldGuard");
+    }
+
+    public static boolean isLandsEnabled() {
+        return Bukkit.getPluginManager().isPluginEnabled("Lands");
     }
 }
