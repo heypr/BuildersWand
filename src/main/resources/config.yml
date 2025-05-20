@@ -18,6 +18,7 @@ wands:
       enabled: true
       text: "&3Durability: {durability}"
     cooldown: 2 # in seconds
+    craftable: false
     blockedMaterials:
       - BEDROCK
       - BARRIER
