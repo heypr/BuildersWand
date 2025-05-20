@@ -25,6 +25,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.block.CrafterCraftEvent;
+import org.bukkit.event.inventory.CraftItemEvent;
+import org.bukkit.event.inventory.FurnaceBurnEvent;
+import org.bukkit.event.inventory.FurnaceSmeltEvent;
+import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -49,6 +54,42 @@ public class WandListener implements Listener {
 
     private WandSession getSession(Player player) {
         return sessions.computeIfAbsent(player.getUniqueId(), k -> new WandSession());
+    }
+
+    @EventHandler
+    public void onCraft(PrepareItemCraftEvent event) {
+        for (ItemStack item : event.getInventory().getMatrix()) {
+            if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+                event.getInventory().setResult(null);
+                break;
+            }
+        }
+    }
+
+    @EventHandler
+    public void onCrafterCraft(CrafterCraftEvent event) {
+        ItemStack item = event.getResult();
+        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+            event.setResult(new ItemStack(Material.AIR));
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onFurnaceBurn(FurnaceBurnEvent event) {
+        ItemStack item = event.getFuel();
+        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+            event.setConsumeFuel(false);
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onFuranceSmelt(FurnaceSmeltEvent event) {
+        ItemStack item = event.getResult();
+        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler

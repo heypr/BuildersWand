@@ -21,6 +21,7 @@ public class Wand {
     private final String durabilityText;
     private final float cooldown;
     private final List<Material> blockedMaterials;
+    private final boolean isCraftable;
 
     public Wand(int id,
                 String name,
@@ -35,7 +36,8 @@ public class Wand {
                 boolean durabilityEnabled,
                 String durabilityText,
                 float cooldown,
-                List<Material> blockedMaterials) {
+                List<Material> blockedMaterials,
+                boolean isCraftable) {
         this.id = id;
         this.name = name;
         this.material = material;
@@ -50,6 +52,7 @@ public class Wand {
         this.durabilityText = durabilityText;
         this.cooldown = cooldown;
         this.blockedMaterials = blockedMaterials;
+        this.isCraftable = isCraftable;
     }
 
     public int getId() {
@@ -108,5 +111,9 @@ public class Wand {
 
     public List<Material> getBlockedMaterials() {
         return blockedMaterials;
+    }
+
+    public boolean isCraftable() {
+        return isCraftable;
     }
 }

@@ -50,10 +50,11 @@ public class ConfigManager {
             String durabilityText = config.getString("wands." + wandKey + ".durability.text", "&3Durability: {durability}");
             float cooldown = config.getInt("wands." + wandKey + ".cooldown", 0);
             List<Material> blockedMaterials = config.getStringList("wands." + wandKey + ".blockedMaterials").stream().map(Material::valueOf).toList();
+            boolean isCraftable = config.getBoolean("wands." + wandKey + ".craftable", false);
 
             Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, maxSize, maxSizeText,
                     maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
-                    durabilityEnabled, durabilityText, cooldown, blockedMaterials);
+                    durabilityEnabled, durabilityText, cooldown, blockedMaterials, isCraftable);
 
             wandConfigs.put(wandId, wand);
             wandList.add(wand);
