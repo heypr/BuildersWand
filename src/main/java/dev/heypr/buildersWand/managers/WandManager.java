@@ -6,6 +6,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
@@ -50,7 +51,7 @@ public class WandManager {
         if (meta != null) {
             meta.displayName(item.getName());
             Component durabilityText = item.getDurabilityText().replaceText(TextReplacementConfig.builder().match("\\{durability\\}").replacement(String.valueOf(item.getDurabilityAmount())).build());
-            Component sizeText = item.getMaxSizeText().replaceText(TextReplacementConfig.builder().match("\\{maxSizeText\\}").replacement(String.valueOf(item.getMaxSize())).build());
+            Component sizeText = item.getMaxSizeText().replaceText(TextReplacementConfig.builder().match("\\{maxSize\\}").replacement(String.valueOf(item.getMaxSize())).build());
             List<Component> finalLore = new ArrayList<>();
             finalLore.add(durabilityText);
             finalLore.add(sizeText);
@@ -69,7 +70,7 @@ public class WandManager {
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(BuildersWand.PDC_KEY_DURABILITY, PersistentDataType.INTEGER, durability);
         Component durabilityText = getWand(item).getDurabilityText().replaceText(TextReplacementConfig.builder().match("\\{durability\\}").replacement(String.valueOf(durability)).build());
-        Component sizeText = getWand(item).getMaxSizeText().replaceText(TextReplacementConfig.builder().match("\\{maxSizeText\\}").replacement(String.valueOf(maxSize)).build());
+        Component sizeText = getWand(item).getMaxSizeText().replaceText(TextReplacementConfig.builder().match("\\{maxSize\\}").replacement(String.valueOf(maxSize)).build());
         List<Component> finalLore = new ArrayList<>();
         if (!infinite) finalLore.add(durabilityText);
         finalLore.add(sizeText);
@@ -131,6 +132,12 @@ public class WandManager {
         if (item == null || item.getItemMeta() == null || !isWand(item)) return 0;
         ItemMeta meta = item.getItemMeta();
         return meta.getPersistentDataContainer().getOrDefault(BuildersWand.PDC_KEY_MAX_SIZE, PersistentDataType.INTEGER, getWand(item).getMaxSize());
+    }
+
+    public static List<Material> getBlockedMaterials(ItemStack item) {
+        if (item == null || item.getItemMeta() == null || !isWand(item)) return Collections.emptyList();
+        Wand wand = getWand(item);
+        return wand != null ? wand.getBlockedMaterials() : Collections.emptyList();
     }
 
     public static ItemStack createWandItem(int wandId) {

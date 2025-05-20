@@ -1,8 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.listeners.WandListener;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -42,12 +42,12 @@ public class PlacementQueueManager {
 
                 int remaining = blocksToPlace.size();
                 if (remaining > 0 && remaining < 50) {
-                    player.sendActionBar(ChatColor.AQUA + "[BuildersWand] " + ChatColor.GRAY + "Placing blocks... " + ChatColor.YELLOW + remaining + ChatColor.GRAY + " left");
+                    player.sendActionBar(Util.toPrefixedComponent("&7Placing blocks... &e" + remaining + " &7left"));
                 }
 
                 if (blocksToPlace.isEmpty()) {
                     if (size > 50) {
-                        player.sendActionBar(ChatColor.AQUA + "[BuildersWand] " + ChatColor.GREEN + "Block placement complete!");
+                        player.sendActionBar(Util.toPrefixedComponent("&aBlock placement complete!"));
                     }
                     WandListener.getInstance().unlockPlayer(player);
                     this.cancel();

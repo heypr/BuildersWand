@@ -5,6 +5,8 @@ api-version: '1.21'
 prefix: BuildersWand
 softdepend:
   - SuperiorSkyblock2
+  - WorldGuard
+  - Lands
 load: STARTUP
 commands:
   givewand:
