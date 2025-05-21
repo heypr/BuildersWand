@@ -26,7 +26,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.block.CrafterCraftEvent;
-import org.bukkit.event.inventory.CraftItemEvent;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
 import org.bukkit.event.inventory.FurnaceSmeltEvent;
 import org.bukkit.event.inventory.PrepareItemCraftEvent;
@@ -59,7 +58,7 @@ public class WandListener implements Listener {
     @EventHandler
     public void onCraft(PrepareItemCraftEvent event) {
         for (ItemStack item : event.getInventory().getMatrix()) {
-            if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+            if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
                 event.getInventory().setResult(null);
                 break;
             }
@@ -69,7 +68,7 @@ public class WandListener implements Listener {
     @EventHandler
     public void onCrafterCraft(CrafterCraftEvent event) {
         ItemStack item = event.getResult();
-        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
             event.setResult(new ItemStack(Material.AIR));
             event.setCancelled(true);
         }
@@ -78,7 +77,7 @@ public class WandListener implements Listener {
     @EventHandler
     public void onFurnaceBurn(FurnaceBurnEvent event) {
         ItemStack item = event.getFuel();
-        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
             event.setConsumeFuel(false);
             event.setCancelled(true);
         }
@@ -87,7 +86,7 @@ public class WandListener implements Listener {
     @EventHandler
     public void onFuranceSmelt(FurnaceSmeltEvent event) {
         ItemStack item = event.getResult();
-        if (WandManager.isWand(item) && WandManager.getWand(item).isCraftable()) {
+        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
             event.setCancelled(true);
         }
     }
@@ -207,6 +206,7 @@ public class WandListener implements Listener {
         BlockFace face = rtr.getHitBlockFace();
 
         if (hitBlock.equals(session.lastTargetBlock) && face == session.lastTargetFace) return;
+        if (wand.getBlockedMaterials().contains(hitBlock.getType())) return;
 
         session.previewBlocks.clear();
         session.lastTargetBlock = hitBlock;
@@ -218,9 +218,8 @@ public class WandListener implements Listener {
 
         for (Block b : extrudedBlocks) {
             Block target = b.getRelative(face);
-            if (wand.getBlockedMaterials().contains(target.getType())) continue;
             if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) continue;
-            if (BuildersWand.isLandsEnabled() && !isInsideTown(player, target.getLocation())) continue;
+            if (BuildersWand.isLandsEnabled() && !isInsideLand(player, target.getLocation())) continue;
             if (BuildersWand.isWorldGuardEnabled() && !checkWG(player, target.getLocation())) continue;
 
             if (target.getType().isAir() && isReplaceable(target.getType())) {
@@ -284,7 +283,7 @@ public class WandListener implements Listener {
         return island != null && island.isInsideRange(location);
     }
 
-    private boolean isInsideTown(Player player, Location location) {
+    private boolean isInsideLand(Player player, Location location) {
         LandsIntegration api = LandsIntegration.of(BuildersWand.getInstance());
         LandWorld world = api.getWorld(location.getWorld());
         if (world == null) return false;
