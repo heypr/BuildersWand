@@ -1,6 +1,5 @@
 package dev.heypr.buildersWand;
 
-import com.sk89q.worldguard.WorldGuard;
 import dev.heypr.buildersWand.commands.GiveWandCommand;
 import dev.heypr.buildersWand.commands.ReloadWandCommand;
 import dev.heypr.buildersWand.listeners.WandListener;
