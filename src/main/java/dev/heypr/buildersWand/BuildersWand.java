@@ -11,8 +11,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuildersWand extends JavaPlugin {
 
-    private static BuildersWand instance;
     private static final WandManager wandManager = new WandManager();
+    private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
     public static NamespacedKey PDC_KEY_MAX_SIZE;

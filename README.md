@@ -1,6 +1,6 @@
 # BuildersWand
 
-Introducing BuildersWand! A free, open-source solution that gives you, and your players, the power to build quickly without breaking a sweat. 
+Introducing BuildersWand! A free, open-source solution that gives you, and your players, the power to build quickly without breaking a sweat.
 
 Relevant commands:
 - /givewand <wand> | Gives you a wand with the given id (/givewand 1 would give you the wand with an id of 1, as seen below).
@@ -11,6 +11,8 @@ An example configuration has been given below. If you have any questions, don't 
 Additionally, feel free to contribute through the GitHub repository (if possible, please ask me first so that we can hash out a good plan for your implementation first).
 
 ```yaml
+# This can be disabled if you want blocks to be placed instantly. 
+# If you notice a performance impact definitely enable this and adjust the maxBlocksPerTick value.
 placementQueue:
   enabled: true
   maxBlocksPerTick: 20 # max blocks to place per tick
@@ -23,16 +25,25 @@ wands:
       - "&7Use it wisely."
     maxSize: 8 # max block search & placement size
     maxSizeText: "&3Max Size: {maxSize}"
-    maxRayTraceDistance: 16
-    consumeItems: true
-    generatePreviewOnMove: false
+    maxRayTraceDistance: 16 # max distance that the plugin will search for a block in a given direction
+    consumeItems: true # whether the wand should consume items from the player's inventory when placing blocks
+    generatePreviewOnMove: false # whether to generate a preview (small white particles) of where blocks will be placed when the player moves
     durability:
       amount: 100
       enabled: true
       text: "&3Durability: {durability}"
     cooldown: 2 # in seconds
-    craftable: false
+    craftable: false # whether this wand can be used in crafting recipes as an ingredient
     blockedMaterials:
       - BEDROCK
       - BARRIER
+    craftingRecipe:
+      enabled: false
+      shape: # if this is larger than 3x3, an error will be thrown
+        - " D "
+        - " S "
+        - " S "
+      ingredients: # ensure the ingredients listed here are valid materials
+        D: DIAMOND
+        S: STICK
 ```
