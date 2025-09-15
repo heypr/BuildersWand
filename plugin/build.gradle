@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'com.gradleup.shadow' version '8.3.0'
 }
 
 group = 'dev.heypr'
@@ -31,6 +32,7 @@ dependencies {
     compileOnly("com.bgsoftware:SuperiorSkyblockAPI:2024.4")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
     compileOnly("com.github.angeschossen:LandsAPI:7.15.4")
+    implementation project(":api")
 }
 
 def targetJavaVersion = 21
@@ -58,4 +60,8 @@ processResources {
     filesMatching('plugin.yml') {
         expand props
     }
+}
+
+shadowJar {
+    archiveFileName.set("${rootProject.name}-${project.version}.jar")
 }

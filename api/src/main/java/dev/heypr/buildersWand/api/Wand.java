@@ -1,10 +1,11 @@
-package dev.heypr.buildersWand;
+package dev.heypr.buildersWand.api;
 
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class Wand {
     private final int id;
@@ -22,6 +23,9 @@ public class Wand {
     private final float cooldown;
     private final List<Material> blockedMaterials;
     private final boolean isCraftable;
+    private final boolean craftingRecipeEnabled;
+    private final List<String> recipeShape;
+    private final Map<Character, Material> recipeIngredients;
 
     public Wand(int id,
                 String name,
@@ -37,7 +41,10 @@ public class Wand {
                 String durabilityText,
                 float cooldown,
                 List<Material> blockedMaterials,
-                boolean isCraftable) {
+                boolean isCraftable,
+                boolean craftingRecipeEnabled,
+                List<String> recipeShape,
+                Map<Character, Material> recipeIngredients) {
         this.id = id;
         this.name = name;
         this.material = material;
@@ -53,6 +60,9 @@ public class Wand {
         this.cooldown = cooldown;
         this.blockedMaterials = blockedMaterials;
         this.isCraftable = isCraftable;
+        this.craftingRecipeEnabled = craftingRecipeEnabled;
+        this.recipeShape = recipeShape;
+        this.recipeIngredients = recipeIngredients;
     }
 
     public int getId() {
@@ -115,5 +125,17 @@ public class Wand {
 
     public boolean isCraftable() {
         return isCraftable;
+    }
+
+    public boolean isCraftingRecipeEnabled() {
+        return craftingRecipeEnabled;
+    }
+
+    public List<String> getRecipeShape() {
+        return recipeShape;
+    }
+
+    public Map<Character, Material> getRecipeIngredients() {
+        return recipeIngredients;
     }
 }

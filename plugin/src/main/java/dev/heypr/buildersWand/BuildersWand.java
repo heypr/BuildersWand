@@ -1,9 +1,12 @@
 package dev.heypr.buildersWand;
 
+import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.commands.GiveWandCommand;
 import dev.heypr.buildersWand.commands.ReloadWandCommand;
+import dev.heypr.buildersWand.impl.ApiImplementation;
 import dev.heypr.buildersWand.listeners.WandListener;
 import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -12,6 +15,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class BuildersWand extends JavaPlugin {
 
     private static final WandManager wandManager = new WandManager();
+    private static final RecipeManager recipeManager = new RecipeManager(getInstance());
+
     private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
@@ -28,6 +33,7 @@ public class BuildersWand extends JavaPlugin {
 
         saveDefaultConfig();
         ConfigManager.load();
+        BuildersWandAPI.setInstance(new ApiImplementation(this));
         BuildersWand.getWandManager().registerWands();
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
         getCommand("reloadbuilderswand").setExecutor(new ReloadWandCommand());
@@ -46,6 +52,10 @@ public class BuildersWand extends JavaPlugin {
 
     public static WandManager getWandManager() {
         return wandManager;
+    }
+
+    public static RecipeManager getRecipeManager() {
+        return recipeManager;
     }
 
     public static boolean isSkyblockEnabled() {

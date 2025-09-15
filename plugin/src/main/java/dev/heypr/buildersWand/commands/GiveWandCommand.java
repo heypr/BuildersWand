@@ -1,7 +1,7 @@
 package dev.heypr.buildersWand.commands;
 
+import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.managers.ConfigManager;
-import dev.heypr.buildersWand.Wand;
 import dev.heypr.buildersWand.managers.WandManager;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;

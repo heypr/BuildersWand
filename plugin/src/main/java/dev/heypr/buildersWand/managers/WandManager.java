@@ -1,7 +1,7 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.Wand;
+import dev.heypr.buildersWand.api.Wand;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
@@ -22,6 +22,10 @@ public class WandManager {
     public void registerWands() {
         wandConfigMap.clear();
         loadWandConfigs().forEach(wand -> wandConfigMap.put(wand.getId(), wand));
+    }
+
+    public Collection<Wand> registeredWands() {
+        return wandConfigMap.values();
     }
 
     public static Wand getWandConfig(int wandId) {
