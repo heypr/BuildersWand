@@ -86,7 +86,7 @@ public class WandListener implements Listener {
     }
 
     @EventHandler
-    public void onFuranceSmelt(FurnaceSmeltEvent event) {
+    public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         ItemStack item = event.getResult();
         if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
             event.setCancelled(true);

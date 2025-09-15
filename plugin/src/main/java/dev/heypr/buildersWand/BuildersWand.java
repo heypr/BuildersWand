@@ -15,7 +15,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class BuildersWand extends JavaPlugin {
 
     private static final WandManager wandManager = new WandManager();
-    private static final RecipeManager recipeManager = new RecipeManager(getInstance());
+    private static RecipeManager recipeManager;
 
     private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
@@ -30,6 +30,7 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_DURABILITY = new NamespacedKey(this, "builders_wand_durability");
         PDC_KEY_UUID = new NamespacedKey(this, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
+        recipeManager = new RecipeManager(this);
 
         saveDefaultConfig();
         ConfigManager.load();

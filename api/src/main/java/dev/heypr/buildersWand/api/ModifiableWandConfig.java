@@ -7,27 +7,18 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * A controller for a specific wand's configuration in config.yml.
- * This class makes changes to a FileConfiguration object in memory.
- * To apply these changes, you MUST call BuildersWandAPI.getInstance().saveAndReload().
- */
 public class ModifiableWandConfig {
 
     private final FileConfiguration config;
     private final String recipeBasePath;
     private final String basePath;
 
-    /**
-     * API INTERNAL CONSTRUCTOR. Use BuildersWandAPI.getModifiableConfig(id) to get an instance.
-     */
     public ModifiableWandConfig(FileConfiguration config, int wandId) {
         this.config = config;
         this.basePath = "wands." + wandId + ".";
         this.recipeBasePath = basePath + "craftingRecipe.";
     }
 
-    // Setters now operate directly on the FileConfiguration object passed to them
     public ModifiableWandConfig setName(String name) {
         config.set(basePath + "name", name);
         return this;

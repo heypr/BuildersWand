@@ -11,10 +11,6 @@ import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
 
-/**
- * This class provides the concrete implementation for the abstract API.
- * It bridges the gap between the API calls and your internal managers.
- */
 public class ApiImplementation extends BuildersWandAPI {
 
     private final BuildersWand plugin;
@@ -39,7 +35,6 @@ public class ApiImplementation extends BuildersWandAPI {
     @Override
     public ModifiableWandConfig getModifiableConfig(int wandId) {
         if (plugin.getConfig().isConfigurationSection("wands." + wandId)) {
-            // Pass the plugin's config object to the constructor
             return new ModifiableWandConfig(plugin.getConfig(), wandId);
         }
         return null;
@@ -63,10 +58,6 @@ public class ApiImplementation extends BuildersWandAPI {
 
     @Override
     public void saveAndReload() {
-        BuildersWand.getRecipeManager().unregisterRecipes();
-        plugin.saveConfig();
-        ConfigManager.load();
-        BuildersWand.getWandManager().registerWands();
-        BuildersWand.getRecipeManager().registerRecipes();
+        ConfigManager.reload();
     }
 }

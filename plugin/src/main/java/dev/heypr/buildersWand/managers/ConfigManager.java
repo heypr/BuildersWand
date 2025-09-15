@@ -1,6 +1,7 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.api.Wand;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
@@ -23,6 +24,8 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         wandConfigs.clear();
         loadWandConfigs();
+        BuildersWand.getRecipeManager().unregisterRecipes();
+        BuildersWand.getRecipeManager().registerRecipes();
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
         maxBlocksPerTick = config.getInt("placementQueue.maxBlocksPerTick", 20);
@@ -77,7 +80,10 @@ public class ConfigManager {
                             char ingredientChar = key.charAt(0);
                             String materialName = ingredientsSection.getString(key);
                             try {
-                                Material ingredientMaterial = Material.valueOf(materialName.toUpperCase());
+                                Material ingredientMaterial = null;
+                                if (materialName != null) {
+                                    ingredientMaterial = Material.valueOf(materialName.toUpperCase());
+                                }
                                 recipeIngredients.put(ingredientChar, ingredientMaterial);
                             }
                             catch (IllegalArgumentException e) {
