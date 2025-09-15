@@ -35,9 +35,9 @@ wands:
     craftingRecipe:
       enabled: false
       shape: # if this is larger than 3x3, an error will be thrown
-        - " D "
+        - " E "
         - " S "
         - " S "
       ingredients: # ensure the ingredients listed here are valid materials
-        D: DIAMOND
+        E: EMERALD
         S: STICK

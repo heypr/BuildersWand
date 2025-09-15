@@ -11,11 +11,19 @@ An example configuration has been given below. If you have any questions, don't 
 Additionally, feel free to contribute through the GitHub repository (if possible, please ask me first so that we can hash out a good plan for your implementation first).
 
 ```yaml
-# This can be disabled if you want blocks to be placed instantly. 
+# this isn't required for the build wand to work, but it does reduce the amount of fired dev.heypr.buildersWand.api.events when placing blocks through the wand
+# set to false if you want to handle block place event cancellations yourself and don't want extra dev.heypr.buildersWand.api.events fired
+# set to true if you want to allow other plugins to handle block place event cancellations (like WorldGuard or SuperiorSkyblock)
+fireWandBlockPlaceEvent: true
+# this isn't required for the build wand to work, but it does reduce the amount of fired dev.heypr.buildersWand.api.events when using the wand
+# set to false if you don't want to add extra logic to wand usage, ideal for servers with a lot of players
+fireWandPreviewEvent: true
+# This can be disabled if you want blocks to be placed instantly.
 # If you notice a performance impact definitely enable this and adjust the maxBlocksPerTick value.
 placementQueue:
   enabled: true
   maxBlocksPerTick: 20 # max blocks to place per tick
+
 wands:
   1:
     name: "&3Builders Wand"
@@ -40,10 +48,10 @@ wands:
     craftingRecipe:
       enabled: false
       shape: # if this is larger than 3x3, an error will be thrown
-        - " D "
+        - " E "
         - " S "
         - " S "
       ingredients: # ensure the ingredients listed here are valid materials
-        D: DIAMOND
+        E: EMERALD
         S: STICK
 ```
