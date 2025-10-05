@@ -1,8 +1,8 @@
-# this isn't required for the build wand to work, but it does reduce the amount of fired dev.heypr.buildersWand.api.events when placing blocks through the wand
-# set to false if you want to handle block place event cancellations yourself and don't want extra dev.heypr.buildersWand.api.events fired
+# this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
+# set to false if you want to handle block place event cancellations yourself and don't want extra events fired
 # set to true if you want to allow other plugins to handle block place event cancellations (like WorldGuard or SuperiorSkyblock)
 fireWandBlockPlaceEvent: true
-# this isn't required for the build wand to work, but it does reduce the amount of fired dev.heypr.buildersWand.api.events when using the wand
+# this isn't required for the build wand to work, but it does reduce the amount of fired events when using the wand
 # set to false if you don't want to add extra logic to wand usage, ideal for servers with a lot of players
 fireWandPreviewEvent: true
 # This can be disabled if you want blocks to be placed instantly.
