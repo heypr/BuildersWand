@@ -35,8 +35,6 @@ public abstract class BuildersWandAPI {
         instance = apiInstance;
     }
 
-    // --- Abstract methods to be implemented by the plugin ---
-
     public abstract boolean isWand(ItemStack item);
 
     public abstract WandItem getWandItem(ItemStack item);
