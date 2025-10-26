@@ -1,3 +1,3 @@
 rootProject.name = 'BuildersWand'
 
-include 'api', 'plugin'
+include 'api', 'BuildersWand'
