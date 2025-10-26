@@ -12,6 +12,10 @@ For anyone wondering, this is (moreorless) a spiritual successor to the abandone
 
 Additionally, feel free to contribute through the GitHub repository (if possible, please ask me first so that we can hash out a good plan for your implementation first).
 
+# API
+
+BuildersWand *does* feature an API, but currently there is no documentation nor hosted API jar that can be depended on. **If you are a plugin author and looking for an implementable API, *please* contact me via my support Discord above and let me know that there is some level of interest.**
+
 ```yaml
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
 # set to false if you want to handle block place event cancellations yourself and don't want extra events fired
