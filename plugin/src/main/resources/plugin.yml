@@ -13,6 +13,9 @@ commands:
     description: Give yourself a Builders Wand
     usage: /givewand <wand_id>
     permission: builderswand.give
+    aliases:
+      - gw
+      - getwand
   reloadbuilderswand:
     description: Reload the BuildersWand configuration
     usage: /reloadbuilderswand

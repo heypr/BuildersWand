@@ -10,7 +10,9 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Util;
-import dev.heypr.buildersWand.Wand;
+import dev.heypr.buildersWand.api.Wand;
+import dev.heypr.buildersWand.api.events.WandPlaceEvent;
+import dev.heypr.buildersWand.api.events.WandPreviewEvent;
 import dev.heypr.buildersWand.managers.ConfigManager;
 import dev.heypr.buildersWand.managers.PlacementQueueManager;
 import dev.heypr.buildersWand.managers.WandManager;
@@ -84,7 +86,7 @@ public class WandListener implements Listener {
     }
 
     @EventHandler
-    public void onFuranceSmelt(FurnaceSmeltEvent event) {
+    public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         ItemStack item = event.getResult();
         if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
             event.setCancelled(true);
@@ -139,19 +141,17 @@ public class WandListener implements Listener {
         float cooldown = wand.getCooldown() * 1000L;
 
         if (now - last < cooldown) {
-            player.sendActionBar(Util.toPrefixedComponent("&4Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again."));
+            player.sendActionBar(Util.toPrefixedComponent("&4Please wait " + (int) ((cooldown - (now - last)) / 1000) + " seconds before using the wand again."));
             return;
         }
 
+        int needed = session.previewBlocks.size();
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
             int available = getItemCount(player, session.lastTargetBlock.getType());
-            int needed = session.previewBlocks.size();
-
             if (available < needed) {
                 player.sendMessage(Util.toPrefixedComponent("&4You need " + (needed - available) + " more " + session.lastTargetBlock.getType().name() + " blocks."));
                 return;
             }
-            removeItems(player, session.lastTargetBlock.getType(), needed);
         }
 
         session.lastRightClickTime = now;
@@ -161,36 +161,53 @@ public class WandListener implements Listener {
 
         if (bpe.isCancelled()) {
             player.sendActionBar(Util.toPrefixedComponent("&4Disallowed."));
+            return;
+        }
+
+        Set<Block> finalBlocksToPlace = session.previewBlocks;
+
+        if (ConfigManager.shouldFireBlockPlaceEvent()) {
+            WandPlaceEvent wandEvent = new WandPlaceEvent(player, wandItem, wand, session.previewBlocks);
+            Bukkit.getPluginManager().callEvent(wandEvent);
+
+            if (wandEvent.isCancelled()) {
+                return;
+            }
+
+            finalBlocksToPlace = wandEvent.getBlocksToPlace();
+        }
+
+        if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
+            removeItems(player, session.lastTargetBlock.getType(), needed);
+        }
+
+        if (ConfigManager.isPlacementQueueEnabled()) {
+            new PlacementQueueManager(player, finalBlocksToPlace, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
         }
         else {
-            if (ConfigManager.isPlacementQueueEnabled()) {
-                new PlacementQueueManager(player, session.previewBlocks, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
+            for (Block block : finalBlocksToPlace) {
+                block.setType(session.lastTargetBlock.getType(), true);
+            }
+        }
+
+        session.previewBlocks.clear();
+        session.lastTargetBlock = null;
+        session.lastTargetFace = null;
+
+        if (WandManager.isWandDurabilityEnabled(wandItem)) {
+            if (WandManager.getWandDurability(wandItem) <= 1) {
+                player.getInventory().removeItem(wandItem);
             }
             else {
-                for (Block block : session.previewBlocks) {
-                    block.setType(session.lastTargetBlock.getType(), true);
-                }
+                WandManager.decrementWandDurability(wandItem);
             }
+        }
+        else {
+            WandManager.handleInfiniteDurability(wandItem);
+        }
 
-            session.previewBlocks.clear();
-            session.lastTargetBlock = null;
-            session.lastTargetFace = null;
-
-            if (WandManager.isWandDurabilityEnabled(wandItem)) {
-                if (WandManager.getWandDurability(wandItem) <= 1) {
-                    player.getInventory().removeItem(wandItem);
-                }
-                else {
-                    WandManager.decrementWandDurability(wandItem);
-                }
-            }
-            else {
-                WandManager.handleInfiniteDurability(wandItem);
-            }
-
-            if (!wand.generatePreviewOnMove()) {
-                session.initialPlace = true;
-            }
+        if (!wand.generatePreviewOnMove()) {
+            session.initialPlace = true;
         }
     }
 
@@ -224,6 +241,17 @@ public class WandListener implements Listener {
 
             if (target.getType().isAir() && isReplaceable(target.getType())) {
                 session.previewBlocks.add(target);
+            }
+        }
+
+        if (ConfigManager.shouldFireWandPreviewEvent()) {
+            WandPreviewEvent previewEvent = new WandPreviewEvent(player, wand, session.previewBlocks);
+            Bukkit.getPluginManager().callEvent(previewEvent);
+
+            session.previewBlocks = previewEvent.getPreviewBlocks();
+
+            if (previewEvent.isCancelled()) {
+                return;
             }
         }
 

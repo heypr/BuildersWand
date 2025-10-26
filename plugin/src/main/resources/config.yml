@@ -1,22 +1,3 @@
-# BuildersWand
-
-Introducing BuildersWand! A free, open-source solution that gives you, and your players, the power to build quickly without breaking a sweat.
-
-Relevant commands:
-- /givewand <wand> (Aliases: /gw, /getwand) | Gives you a wand with the given id (/givewand 1 would give you the wand with an id of 1, as seen below).
-- /reloadbuilderswand (Aliases: /rbw, /reloadbw, /reloadwands) | Reloads the plugin, grabbing all changes from the configuration file and loading it into memory. All wands are updated, including ones currently in use by players.
-
-An example configuration has been given below. If you have any questions, don't hesitate to contact me through my support Discord: https://discord.gg/Drgk3CxrtV
-
-For anyone wondering, this is (moreorless) a spiritual successor to the abandoned BuildersWand Premium resource: https://www.spigotmc.org/resources/abandoned-builders-wand-premium-building-util-api-configurable-1-8-1-20-4.105953/.
-
-Additionally, feel free to contribute through the GitHub repository (if possible, please ask me first so that we can hash out a good plan for your implementation first).
-
-# API
-
-BuildersWand *does* feature an API, but currently there is no documentation nor hosted API jar that can be depended on. **If you are a plugin author and looking for an implementable API, *please* contact me via my support Discord above and let me know that there is some level of interest.**
-
-```yaml
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
 # set to false if you want to handle block place event cancellations yourself and don't want extra events fired
 # set to true if you want to allow other plugins to handle block place event cancellations (like WorldGuard or SuperiorSkyblock)
@@ -60,4 +41,3 @@ wands:
       ingredients: # ensure the ingredients listed here are valid materials
         E: EMERALD
         S: STICK
-```

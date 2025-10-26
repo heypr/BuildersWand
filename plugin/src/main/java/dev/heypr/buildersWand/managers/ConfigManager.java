@@ -1,7 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.Wand;
+import dev.heypr.buildersWand.api.BuildersWandAPI;
+import dev.heypr.buildersWand.api.Wand;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -14,6 +15,8 @@ import java.util.Map;
 public class ConfigManager {
     private static final Map<Integer, Wand> wandConfigs = new HashMap<>();
     private static boolean placementQueueEnabled;
+    private static boolean fireWandBlockPlaceEvent;
+    private static boolean fireWandPreviewEvent;
     private static int maxBlocksPerTick;
 
     public static void load() {
@@ -21,9 +24,13 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         wandConfigs.clear();
         loadWandConfigs();
+        BuildersWand.getRecipeManager().unregisterRecipes();
+        BuildersWand.getRecipeManager().registerRecipes();
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
         maxBlocksPerTick = config.getInt("placementQueue.maxBlocksPerTick", 20);
+        fireWandBlockPlaceEvent = config.getBoolean("fireWandBlockPlaceEvent", true);
+        fireWandPreviewEvent = config.getBoolean("fireWandPreviewEvent", true);
     }
 
     public static List<Wand> loadWandConfigs() {
@@ -51,10 +58,48 @@ public class ConfigManager {
             float cooldown = config.getInt("wands." + wandKey + ".cooldown", 0);
             List<Material> blockedMaterials = config.getStringList("wands." + wandKey + ".blockedMaterials").stream().map(Material::valueOf).toList();
             boolean isCraftable = config.getBoolean("wands." + wandKey + ".craftable", false);
+            boolean craftingRecipeEnabled = config.getBoolean("wands." + wandKey + ".craftingRecipe.enabled", false);
+            List<String> recipeShape = List.of();
+            Map<Character, Material> recipeIngredients = new HashMap<>();
+            if (craftingRecipeEnabled) {
+                recipeShape = config.getStringList("wands." + wandKey + ".craftingRecipe.shape");
+                recipeIngredients = new HashMap<>();
+
+                if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
+                    BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has an invalid recipe shape. Must be 1-3 rows of 1-3 characters. Disabling crafting for this wand.");
+                    craftingRecipeEnabled = false;
+                }
+                else {
+                    ConfigurationSection ingredientsSection = config.getConfigurationSection("wands." + wandKey + ".craftingRecipe.ingredients");
+                    if (ingredientsSection == null) {
+                        BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has crafting enabled but no ingredients defined. Disabling crafting.");
+                        craftingRecipeEnabled = false;
+                    }
+                    else {
+                        for (String key : ingredientsSection.getKeys(false)) {
+                            char ingredientChar = key.charAt(0);
+                            String materialName = ingredientsSection.getString(key);
+                            try {
+                                Material ingredientMaterial = null;
+                                if (materialName != null) {
+                                    ingredientMaterial = Material.valueOf(materialName.toUpperCase());
+                                }
+                                recipeIngredients.put(ingredientChar, ingredientMaterial);
+                            }
+                            catch (IllegalArgumentException e) {
+                                BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has an invalid ingredient material: '" + materialName + "'. Disabling crafting.");
+                                craftingRecipeEnabled = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
 
             Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, maxSize, maxSizeText,
                     maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
-                    durabilityEnabled, durabilityText, cooldown, blockedMaterials, isCraftable);
+                    durabilityEnabled, durabilityText, cooldown, blockedMaterials, isCraftable,
+                    craftingRecipeEnabled, recipeShape, recipeIngredients);
 
             wandConfigs.put(wandId, wand);
             wandList.add(wand);
@@ -81,5 +126,13 @@ public class ConfigManager {
 
     public static boolean isPlacementQueueEnabled() {
         return placementQueueEnabled;
+    }
+
+    public static boolean shouldFireBlockPlaceEvent() {
+        return fireWandBlockPlaceEvent;
+    }
+
+    public static boolean shouldFireWandPreviewEvent() {
+        return fireWandPreviewEvent;
     }
 }

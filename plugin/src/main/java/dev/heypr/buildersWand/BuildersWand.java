@@ -1,9 +1,12 @@
 package dev.heypr.buildersWand;
 
+import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.commands.GiveWandCommand;
 import dev.heypr.buildersWand.commands.ReloadWandCommand;
+import dev.heypr.buildersWand.impl.ApiImplementation;
 import dev.heypr.buildersWand.listeners.WandListener;
 import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
@@ -11,8 +14,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuildersWand extends JavaPlugin {
 
-    private static BuildersWand instance;
     private static final WandManager wandManager = new WandManager();
+    private static RecipeManager recipeManager;
+
+    private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
     public static NamespacedKey PDC_KEY_MAX_SIZE;
@@ -25,9 +30,11 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_DURABILITY = new NamespacedKey(this, "builders_wand_durability");
         PDC_KEY_UUID = new NamespacedKey(this, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
+        recipeManager = new RecipeManager(this);
 
         saveDefaultConfig();
         ConfigManager.load();
+        BuildersWandAPI.setInstance(new ApiImplementation(this));
         BuildersWand.getWandManager().registerWands();
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
         getCommand("reloadbuilderswand").setExecutor(new ReloadWandCommand());
@@ -46,6 +53,10 @@ public class BuildersWand extends JavaPlugin {
 
     public static WandManager getWandManager() {
         return wandManager;
+    }
+
+    public static RecipeManager getRecipeManager() {
+        return recipeManager;
     }
 
     public static boolean isSkyblockEnabled() {
