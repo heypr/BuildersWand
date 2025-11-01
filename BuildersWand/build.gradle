@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'dev.heypr'
-version = '1.1.1'
+version = '1.1.2'
 
 repositories {
     mavenCentral()
@@ -62,6 +62,11 @@ processResources {
     }
 }
 
+assemble {
+    dependsOn shadowJar
+}
+
 shadowJar {
+    configurations = [project.configurations.runtimeClasspath]
     archiveFileName.set("BuildersWand-${project.version}.jar")
 }
