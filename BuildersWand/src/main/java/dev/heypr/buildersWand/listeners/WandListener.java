@@ -10,6 +10,7 @@ import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Util;
+import dev.heypr.buildersWand.api.ModifiableWandConfig;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.api.events.WandPlaceEvent;
 import dev.heypr.buildersWand.api.events.WandPreviewEvent;
@@ -289,7 +290,29 @@ public class WandListener implements Listener {
 
                 for (Block preview : locations) {
                     Location loc = preview.getLocation();
-                    world.spawnParticle(Particle.DUST, loc.add(0.5, 0.5, 0.5), 1, new Particle.DustOptions(Color.WHITE, 1));
+                    double offsetX = wand.getPreviewParticleOffsetX();
+                    double offsetY = wand.getPreviewParticleOffsetY();
+                    double offsetZ = wand.getPreviewParticleOffsetZ();
+
+                    double speed = wand.getPreviewParticleSpeed();
+                    int r = wand.getPreviewParticleOptionsRed();
+                    int g = wand.getPreviewParticleOptionsGreen();
+                    int b = wand.getPreviewParticleOptionsBlue();
+                    int size = wand.getPreviewParticleOptionsSize();
+                    int count = wand.getPreviewParticleCount();
+                    Particle particle;
+                    try {
+                        particle = Particle.valueOf(wand.getPreviewParticle());
+                        if (particle == Particle.DUST) {
+                            world.spawnParticle(particle, loc.add(0.5, 0.5, 0.5), count, offsetX, offsetY, offsetZ, speed, new Particle.DustOptions(Color.fromRGB(r, g, b), size));
+                        }
+                        else {
+                            world.spawnParticle(particle, loc.add(0.5, 0.5, 0.5), count);
+                        }
+                    }
+                    catch (Exception e) {
+                        world.spawnParticle(Particle.DUST, loc.add(0.5, 0.5, 0.5), 1, new Particle.DustOptions(Color.WHITE, 1));
+                    }
                 }
             }
         };

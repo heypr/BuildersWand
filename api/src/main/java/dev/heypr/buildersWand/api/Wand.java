@@ -2,6 +2,7 @@ package dev.heypr.buildersWand.api;
 
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +21,16 @@ public class Wand {
     private final int durabilityAmount;
     private final boolean durabilityEnabled;
     private final String durabilityText;
+    private final String previewParticle;
+    private final int previewParticleCount;
+    private final double previewParticleOffsetX;
+    private final double previewParticleOffsetY;
+    private final double previewParticleOffsetZ;
+    private final double previewParticleSpeed;
+    private final int previewParticleOptionsRed;
+    private final int previewParticleOptionsGreen;
+    private final int previewParticleOptionsBlue;
+    private final int previewParticleOptionsSize;
     private final float cooldown;
     private final List<Material> blockedMaterials;
     private final boolean isCraftable;
@@ -39,6 +50,16 @@ public class Wand {
                 int durabilityAmount,
                 boolean durabilityEnabled,
                 String durabilityText,
+                String previewParticle,
+                int previewParticleCount,
+                double previewParticleOffsetX,
+                double previewParticleOffsetY,
+                double previewParticleOffsetZ,
+                double previewParticleSpeed,
+                int previewParticleOptionsRed,
+                int previewParticleOptionsGreen,
+                int previewParticleOptionsBlue,
+                int previewParticleOptionsSize,
                 float cooldown,
                 List<Material> blockedMaterials,
                 boolean isCraftable,
@@ -57,6 +78,16 @@ public class Wand {
         this.durabilityAmount = durabilityAmount;
         this.durabilityEnabled = durabilityEnabled;
         this.durabilityText = durabilityText;
+        this.previewParticle = previewParticle;
+        this.previewParticleCount = previewParticleCount;
+        this.previewParticleOffsetX = previewParticleOffsetX;
+        this.previewParticleOffsetY = previewParticleOffsetY;
+        this.previewParticleOffsetZ = previewParticleOffsetZ;
+        this.previewParticleSpeed = previewParticleSpeed;
+        this.previewParticleOptionsRed = previewParticleOptionsRed;
+        this.previewParticleOptionsGreen = previewParticleOptionsGreen;
+        this.previewParticleOptionsBlue = previewParticleOptionsBlue;
+        this.previewParticleOptionsSize = previewParticleOptionsSize;
         this.cooldown = cooldown;
         this.blockedMaterials = blockedMaterials;
         this.isCraftable = isCraftable;
@@ -113,6 +144,46 @@ public class Wand {
 
     public TextComponent getDurabilityText() {
         return Util.toComponent(durabilityText);
+    }
+
+    public String getPreviewParticle() {
+        return previewParticle;
+    }
+
+    public int getPreviewParticleCount() {
+        return previewParticleCount;
+    }
+
+    public double getPreviewParticleOffsetX() {
+        return previewParticleOffsetX;
+    }
+
+    public double getPreviewParticleOffsetY() {
+        return previewParticleOffsetY;
+    }
+
+    public double getPreviewParticleOffsetZ() {
+        return previewParticleOffsetZ;
+    }
+
+    public double getPreviewParticleSpeed() {
+        return previewParticleSpeed;
+    }
+
+    public int getPreviewParticleOptionsRed() {
+        return previewParticleOptionsRed;
+    }
+
+    public int getPreviewParticleOptionsGreen() {
+        return previewParticleOptionsGreen;
+    }
+
+    public int getPreviewParticleOptionsBlue() {
+        return previewParticleOptionsBlue;
+    }
+
+    public int getPreviewParticleOptionsSize() {
+        return previewParticleOptionsSize;
     }
 
     public float getCooldown() {

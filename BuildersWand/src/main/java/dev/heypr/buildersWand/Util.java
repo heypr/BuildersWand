@@ -6,9 +6,11 @@ import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
+import java.util.Objects;
+
 public class Util {
 
-    public static final TextComponent PREFIX = toComponent("&7[&bBuildersWand&7] &r");
+    public static TextComponent PREFIX;
 
     public static TextComponent toComponent(String string) {
         if (string == null) return Component.empty();
@@ -17,6 +19,6 @@ public class Util {
     }
 
     public static TextComponent toPrefixedComponent(String string) {
-        return PREFIX.append(toComponent(string));
+        return Objects.requireNonNullElseGet(PREFIX, () -> toComponent("&7[&bBuildersWand&7] &r")).append(toComponent(string));
     }
 }

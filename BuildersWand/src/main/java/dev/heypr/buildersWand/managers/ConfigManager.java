@@ -1,9 +1,11 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.api.BuildersWandAPI;
+import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
+import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -28,9 +30,10 @@ public class ConfigManager {
         BuildersWand.getRecipeManager().registerRecipes();
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
-        maxBlocksPerTick = config.getInt("placementQueue.maxBlocksPerTick", 20);
         fireWandBlockPlaceEvent = config.getBoolean("fireWandBlockPlaceEvent", true);
         fireWandPreviewEvent = config.getBoolean("fireWandPreviewEvent", true);
+        maxBlocksPerTick = config.getInt("placementQueue.maxBlocksPerTick", 20);
+        Util.PREFIX = Util.toComponent(config.getString("prefix", "&7[&bBuildersWand&7] &r"));
     }
 
     public static List<Wand> loadWandConfigs() {
@@ -55,6 +58,18 @@ public class ConfigManager {
             int durabilityAmount = config.getInt("wands." + wandKey + ".durability.amount", 100);
             boolean durabilityEnabled = config.getBoolean("wands." + wandKey + ".durability.enabled", true);
             String durabilityText = config.getString("wands." + wandKey + ".durability.text", "&3Durability: {durability}");
+
+            String previewParticle = config.getString("wands." + wandKey + ".previewParticle.particle");
+            int previewParticleCount = config.getInt("wands." + wandKey + ".previewParticle.count", 1);
+            double previewParticleOffsetX = config.getDouble("wands." + wandKey + ".previewParticle.offset.x", 0);
+            double previewParticleOffsetY = config.getDouble("wands." + wandKey + ".previewParticle.offset.y", 0);
+            double previewParticleOffsetZ = config.getDouble("wands." + wandKey + ".previewParticle.offset.z", 0);
+            double previewParticleSpeed = config.getDouble("wands." + wandKey + ".previewParticle.speed", 0);
+            int previewParticleOptionsRed = config.getInt("wands." + wandKey + ".previewParticle.options.red", 0);
+            int previewParticleOptionsGreen = config.getInt("wands." + wandKey + ".previewParticle.options.green", 0);
+            int previewParticleOptionsBlue = config.getInt("wands." + wandKey + ".previewParticle.options.blue", 0);
+            int previewParticleOptionsSize = config.getInt("wands." + wandKey + ".previewParticle.options.size", 1);
+
             float cooldown = config.getInt("wands." + wandKey + ".cooldown", 0);
             List<Material> blockedMaterials = config.getStringList("wands." + wandKey + ".blockedMaterials").stream().map(Material::valueOf).toList();
             boolean isCraftable = config.getBoolean("wands." + wandKey + ".craftable", false);
@@ -98,8 +113,11 @@ public class ConfigManager {
 
             Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, maxSize, maxSizeText,
                     maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
-                    durabilityEnabled, durabilityText, cooldown, blockedMaterials, isCraftable,
-                    craftingRecipeEnabled, recipeShape, recipeIngredients);
+                    durabilityEnabled, durabilityText, previewParticle,
+                    previewParticleCount, previewParticleOffsetX, previewParticleOffsetY, previewParticleOffsetZ,
+                    previewParticleSpeed, previewParticleOptionsRed, previewParticleOptionsGreen,
+                    previewParticleOptionsBlue, previewParticleOptionsSize, cooldown, blockedMaterials,
+                    isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients);
 
             wandConfigs.put(wandId, wand);
             wandList.add(wand);
@@ -120,10 +138,6 @@ public class ConfigManager {
         return wandConfigs.values().stream().toList();
     }
 
-    public static int getMaxBlocksPerTick() {
-        return maxBlocksPerTick;
-    }
-
     public static boolean isPlacementQueueEnabled() {
         return placementQueueEnabled;
     }
@@ -134,5 +148,9 @@ public class ConfigManager {
 
     public static boolean shouldFireWandPreviewEvent() {
         return fireWandPreviewEvent;
+    }
+
+    public static int getMaxBlocksPerTick() {
+        return maxBlocksPerTick;
     }
 }

@@ -1,9 +1,9 @@
 package dev.heypr.buildersWand.commands;
 
+import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.managers.ConfigManager;
 import dev.heypr.buildersWand.managers.WandManager;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -19,7 +19,7 @@ public class GiveWandCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0 || args.length > 2) {
-            sender.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Usage: /givewand <wand_id> (player)");
+            sender.sendMessage(Util.toPrefixedComponent("&cUsage: /givewand <wand_id> (player)"));
             return true;
         }
 
@@ -32,7 +32,7 @@ public class GiveWandCommand implements CommandExecutor, TabCompleter {
         if (args.length == 2) {
             Player target = player.getServer().getPlayer(args[1]);
             if (target == null) {
-                sender.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Player not found.");
+                sender.sendMessage(Util.toPrefixedComponent("&cPlayer not found."));
                 return true;
             }
             player = target;
@@ -44,20 +44,20 @@ public class GiveWandCommand implements CommandExecutor, TabCompleter {
             wandId = Integer.parseInt(args[0]);
         }
         catch (NumberFormatException e) {
-            sender.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "Invalid wand ID.");
+            sender.sendMessage(Util.toPrefixedComponent("&cInvalid wand ID."));
             return true;
         }
 
         Wand wand = WandManager.getWandConfig(wandId);
 
         if (wand == null) {
-            sender.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.RED + "No wand found with ID: " + wandId);
+            sender.sendMessage(Util.toPrefixedComponent("&cNo wand found with ID: " + wandId));
             return true;
         }
 
         player.getInventory().addItem(WandManager.createWandItem(wand));
 
-        player.sendMessage(ChatColor.AQUA + "[BuildersWand] " + ChatColor.GREEN + "You have been given a wand!");
+        player.sendMessage(Util.toPrefixedComponent("&aYou have been given a wand!"));
         return true;
     }
 

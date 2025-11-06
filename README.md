@@ -18,13 +18,22 @@ BuildersWand *does* feature an API, but currently there is no documentation nor 
 
 ## Default Configuration
 ```yaml
+# BuildersWand Configuration File
+
+# this is the prefix for all messages sent by the plugin.
+# this is an optional setting, if you remove it the default prefix will be used
+# supports minimessage formatting
+prefix: "&7[&bBuildersWand&7] &r"
+
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
 # set to false if you want to handle block place event cancellations yourself and don't want extra events fired
 # set to true if you want to allow other plugins to handle block place event cancellations (like WorldGuard or SuperiorSkyblock)
 fireWandBlockPlaceEvent: true
+
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when using the wand
 # set to false if you don't want to add extra logic to wand usage, ideal for servers with a lot of players
 fireWandPreviewEvent: true
+
 # This can be disabled if you want blocks to be placed instantly.
 # If you notice a performance impact definitely enable this and adjust the maxBlocksPerTick value.
 placementQueue:
@@ -36,8 +45,8 @@ wands:
     name: "&3Builders Wand"
     material: "BLAZE_ROD"
     lore:
-      - "&7A powerful wand for building!"
-      - "&7Use it wisely."
+      - "&7A powerful wand for <blue>building!"
+      - "&7Use it <green>wisely."
     maxSize: 8 # max block search & placement size
     maxSizeText: "&3Max Size: {maxSize}"
     maxRayTraceDistance: 16 # max distance that the plugin will search for a block in a given direction
@@ -47,6 +56,20 @@ wands:
       amount: 100
       enabled: true
       text: "&3Durability: {durability}"
+    previewParticle: # paper-only
+      particle: "DUST" # valid particle names can be found here: https://jd.papermc.io/paper/1.21.10/org/bukkit/Particle.html
+      options: # only required for certain particles
+        color:
+          red: 0
+          green: 0
+          blue: 0
+        size: 1.0
+      count: 5 # number of particles to spawn per block in the preview
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      speed: 0 # speed of the particles
     cooldown: 2 # in seconds
     craftable: false # whether this wand can be used in crafting recipes as an ingredient
     blockedMaterials:
@@ -61,4 +84,5 @@ wands:
       ingredients: # ensure the ingredients listed here are valid materials
         E: EMERALD
         S: STICK
+
 ```
