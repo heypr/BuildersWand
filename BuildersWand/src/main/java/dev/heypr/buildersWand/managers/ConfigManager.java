@@ -3,9 +3,7 @@ package dev.heypr.buildersWand.managers;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
-import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -15,113 +13,176 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigManager {
-    private static final Map<Integer, Wand> wandConfigs = new HashMap<>();
+    private static final Map<String, Wand> wandConfigs = new HashMap<>();
     private static boolean placementQueueEnabled;
     private static boolean fireWandBlockPlaceEvent;
     private static boolean fireWandPreviewEvent;
+    private static boolean debugModeEnabled;
+    private static boolean destroyInvalidWands;
+    private static String invalidWandMessage;
     private static int maxBlocksPerTick;
 
     public static void load() {
+        Util.debug("Starting ConfigManager load sequence...");
         BuildersWand plugin = BuildersWand.getInstance();
         plugin.saveDefaultConfig();
+
+        if (BuildersWand.getRecipeManager() != null) {
+            Util.debug("Unregistering existing recipes...");
+            BuildersWand.getRecipeManager().unregisterRecipes();
+        }
+
         wandConfigs.clear();
         loadWandConfigs();
-        BuildersWand.getRecipeManager().unregisterRecipes();
-        BuildersWand.getRecipeManager().registerRecipes();
+
+        if (BuildersWand.getRecipeManager() != null) {
+            Util.debug("Registering new recipes based on loaded configs...");
+            BuildersWand.getRecipeManager().registerRecipes();
+        }
+
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
         fireWandBlockPlaceEvent = config.getBoolean("fireWandBlockPlaceEvent", true);
         fireWandPreviewEvent = config.getBoolean("fireWandPreviewEvent", true);
         maxBlocksPerTick = config.getInt("placementQueue.maxBlocksPerTick", 20);
-        Util.PREFIX = Util.toComponent(config.getString("prefix", "&7[&bBuildersWand&7] &r"));
+
+        destroyInvalidWands = config.getBoolean("destroyInvalidWands.enabled", false);
+        invalidWandMessage = config.getString("destroyInvalidWands.message", "&cYour wand has been removed because it is no longer valid. Please contact an administrator if you believe this is an error.");
+
+        debugModeEnabled = config.getBoolean("debug", false);
+
+        Util.debug("Queue Enabled: " + placementQueueEnabled);
+        Util.debug("Max Blocks Per Tick: " + maxBlocksPerTick);
+        Util.debug("Fire Block Place Event: " + fireWandBlockPlaceEvent);
+        Util.debug("Fire Preview Event: " + fireWandPreviewEvent);
+        Util.debug("Destroy Invalid Wands: " + destroyInvalidWands);
+        Util.debug("Invalid Wand Message: " + invalidWandMessage);
+        Util.debug("Debug Mode: " + debugModeEnabled);
+
+        String prefix = config.getString("prefix", "&7[&bBuildersWand&7] &r");
+        Util.PREFIX = Util.toComponent(prefix);
+        Util.debug("Prefix loaded and converted to component.");
     }
 
     public static List<Wand> loadWandConfigs() {
+        Util.debug("Parsing wands section in config...");
         wandConfigs.clear();
         List<Wand> wandList = new ArrayList<>();
         FileConfiguration config = BuildersWand.getInstance().getConfig();
         ConfigurationSection wandsSection = config.getConfigurationSection("wands");
-        if (wandsSection == null) return null;
 
-        for (String wandKey : wandsSection.getKeys(false)) {
-            int wandId = Integer.parseInt(wandKey);
+        if (wandsSection == null) {
+            Util.debug("Critical: 'wands' section is missing from config.yml!");
+            return wandList;
+        }
 
-            String wandName = config.getString("wands." + wandKey + ".name", "&3Builders Wand");
-            Material wandMaterial = Material.valueOf(config.getString("wands." + wandKey + ".material", "BLAZE_ROD"));
-            List<String> wandLore = config.getStringList("wands." + wandKey + ".lore");
-            int maxSize = config.getInt("wands." + wandKey + ".maxSize", 8);
-            String maxSizeText = config.getString("wands." + wandKey + ".maxSizeText", "&3Max Size: {maxSize}");
-            int maxRayTraceDistance = config.getInt("wands." + wandKey + ".maxRayTraceDistance", 16);
-            boolean consumeItems = config.getBoolean("wands." + wandKey + ".consumeItems", true);
-            boolean generatePreviewOnMove = config.getBoolean("wands." + wandKey + ".generatePreviewOnMove", false);
+        for (String wandId : wandsSection.getKeys(false)) {
+            Util.debug("Attempting to load wand key: " + wandId);
+            try {
+                String path = "wands." + wandId + ".";
 
-            int durabilityAmount = config.getInt("wands." + wandKey + ".durability.amount", 100);
-            boolean durabilityEnabled = config.getBoolean("wands." + wandKey + ".durability.enabled", true);
-            String durabilityText = config.getString("wands." + wandKey + ".durability.text", "&3Durability: {durability}");
+                String wandName = config.getString(path + "name", "&3Builders Wand");
+                Material wandMaterial = Material.valueOf(config.getString(path + "material", "BLAZE_ROD"));
+                List<String> wandLore = config.getStringList(path + "lore");
 
-            String previewParticle = config.getString("wands." + wandKey + ".previewParticle.particle");
-            int previewParticleCount = config.getInt("wands." + wandKey + ".previewParticle.count", 1);
-            double previewParticleOffsetX = config.getDouble("wands." + wandKey + ".previewParticle.offset.x", 0);
-            double previewParticleOffsetY = config.getDouble("wands." + wandKey + ".previewParticle.offset.y", 0);
-            double previewParticleOffsetZ = config.getDouble("wands." + wandKey + ".previewParticle.offset.z", 0);
-            double previewParticleSpeed = config.getDouble("wands." + wandKey + ".previewParticle.speed", 0);
-            int previewParticleOptionsRed = config.getInt("wands." + wandKey + ".previewParticle.options.red", 0);
-            int previewParticleOptionsGreen = config.getInt("wands." + wandKey + ".previewParticle.options.green", 0);
-            int previewParticleOptionsBlue = config.getInt("wands." + wandKey + ".previewParticle.options.blue", 0);
-            int previewParticleOptionsSize = config.getInt("wands." + wandKey + ".previewParticle.options.size", 1);
+                Wand.WandType wandType = Wand.WandType.valueOf(config.getString(path + "wandType", "STANDARD"));
+                int staticLength = config.getInt(path + "staticLength", 3);
+                int staticWidth = config.getInt(path + "staticWidth", 3);
 
-            float cooldown = config.getInt("wands." + wandKey + ".cooldown", 0);
-            List<Material> blockedMaterials = config.getStringList("wands." + wandKey + ".blockedMaterials").stream().map(Material::valueOf).toList();
-            boolean isCraftable = config.getBoolean("wands." + wandKey + ".craftable", false);
-            boolean craftingRecipeEnabled = config.getBoolean("wands." + wandKey + ".craftingRecipe.enabled", false);
-            List<String> recipeShape = List.of();
-            Map<Character, Material> recipeIngredients = new HashMap<>();
-            if (craftingRecipeEnabled) {
-                recipeShape = config.getStringList("wands." + wandKey + ".craftingRecipe.shape");
-                recipeIngredients = new HashMap<>();
+                int maxSize = config.getInt(path + "maxSize", 8);
+                String maxSizeText = config.getString(path + "maxSizeText", "&3Max Size: {maxSize}");
+                int maxRayTraceDistance = config.getInt(path + "maxRayTraceDistance", 16);
 
-                if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
-                    BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has an invalid recipe shape. Must be 1-3 rows of 1-3 characters. Disabling crafting for this wand.");
-                    craftingRecipeEnabled = false;
+                boolean consumeItems = config.getBoolean(path + "consumeItems", true);
+                boolean generatePreviewOnMove = config.getBoolean(path + "generatePreviewOnMove", false);
+
+                int durabilityAmount = config.getInt(path + "durability.amount", 100);
+                boolean durabilityEnabled = config.getBoolean(path + "durability.enabled", true);
+                String durabilityText = config.getString(path + "durability.text", "&3Durability: {durability}");
+
+                String previewParticle = config.getString(path + "previewParticle.particle");
+                int previewParticleCount = config.getInt(path + "previewParticle.count", 1);
+                double pOffsetX = config.getDouble(path + "previewParticle.offset.x", 0);
+                double pOffsetY = config.getDouble(path + "previewParticle.offset.y", 0);
+                double pOffsetZ = config.getDouble(path + "previewParticle.offset.z", 0);
+                double pSpeed = config.getDouble(path + "previewParticle.speed", 0);
+
+                int pRed = config.getInt(path + "previewParticle.options.red", 0);
+                int pGreen = config.getInt(path + "previewParticle.options.green", 0);
+                int pBlue = config.getInt(path + "previewParticle.options.blue", 0);
+                int pSize = config.getInt(path + "previewParticle.options.size", 1);
+
+                float cooldown = (float) config.getDouble(path + "cooldown", 0);
+                int undoHistorySize = config.getInt(path + "undoHistorySize", 10);
+
+                Util.debug("Loading blocked materials for wand " + wandId + "...");
+                List<Material> blockedMaterials = new ArrayList<>();
+                for (String mat : config.getStringList(path + "blockedMaterials")) {
+                    try {
+                        blockedMaterials.add(Material.valueOf(mat));
+                    }
+                    catch (IllegalArgumentException e) {
+                        Util.debug("Invalid blocked material in wand " + wandId + ": " + mat);
+                    }
                 }
-                else {
-                    ConfigurationSection ingredientsSection = config.getConfigurationSection("wands." + wandKey + ".craftingRecipe.ingredients");
-                    if (ingredientsSection == null) {
-                        BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has crafting enabled but no ingredients defined. Disabling crafting.");
+
+                boolean isCraftable = config.getBoolean(path + "craftable", false);
+                boolean craftingRecipeEnabled = config.getBoolean(path + "craftingRecipe.enabled", false);
+                List<String> recipeShape = new ArrayList<>();
+                Map<Character, Material> recipeIngredients = new HashMap<>();
+
+                if (craftingRecipeEnabled) {
+                    Util.debug("Loading recipe for wand " + wandId + "...");
+                    recipeShape = config.getStringList(path + "craftingRecipe.shape");
+                    if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
+                        Util.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
                         craftingRecipeEnabled = false;
                     }
                     else {
-                        for (String key : ingredientsSection.getKeys(false)) {
-                            char ingredientChar = key.charAt(0);
-                            String materialName = ingredientsSection.getString(key);
-                            try {
-                                Material ingredientMaterial = null;
-                                if (materialName != null) {
-                                    ingredientMaterial = Material.valueOf(materialName.toUpperCase());
+                        ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
+                        if (ingredientsSection == null) {
+                            Util.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
+                            craftingRecipeEnabled = false;
+                        }
+                        else {
+                            for (String key : ingredientsSection.getKeys(false)) {
+                                char ingredientChar = key.charAt(0);
+                                String materialName = ingredientsSection.getString(key);
+                                try {
+                                    if (materialName != null) {
+                                        Material mat = Material.valueOf(materialName.toUpperCase());
+                                        recipeIngredients.put(ingredientChar, mat);
+                                        Util.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
+                                    }
                                 }
-                                recipeIngredients.put(ingredientChar, ingredientMaterial);
-                            }
-                            catch (IllegalArgumentException e) {
-                                BuildersWand.getInstance().getLogger().warning("Wand " + wandKey + " has an invalid ingredient material: '" + materialName + "'. Disabling crafting.");
-                                craftingRecipeEnabled = false;
-                                break;
+                                catch (IllegalArgumentException e) {
+                                    Util.error("Wand " + wandId + " invalid ingredient: " + materialName);
+                                    craftingRecipeEnabled = false;
+                                    break;
+                                }
                             }
                         }
                     }
                 }
+
+                Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore,
+                        wandType, staticLength, staticWidth, maxSize, maxSizeText,
+                        maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
+                        durabilityEnabled, durabilityText, previewParticle,
+                        previewParticleCount, pOffsetX, pOffsetY, pOffsetZ,
+                        pSpeed, pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
+                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize);
+
+                wandConfigs.put(wandId, wand);
+                wandList.add(wand);
+                Util.debug("Wand " + wandId + " successfully instantiated and added to cache.");
+
             }
-
-            Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, maxSize, maxSizeText,
-                    maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
-                    durabilityEnabled, durabilityText, previewParticle,
-                    previewParticleCount, previewParticleOffsetX, previewParticleOffsetY, previewParticleOffsetZ,
-                    previewParticleSpeed, previewParticleOptionsRed, previewParticleOptionsGreen,
-                    previewParticleOptionsBlue, previewParticleOptionsSize, cooldown, blockedMaterials,
-                    isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients);
-
-            wandConfigs.put(wandId, wand);
-            wandList.add(wand);
+            catch (Exception e) {
+                Util.error("Error loading wand configuration for key: " + wandId + ". Skipping this wand.");
+            }
         }
+        Util.debug("Finished loading " + wandList.size() + " wands.");
         return wandList;
     }
 
@@ -131,11 +192,11 @@ public class ConfigManager {
         load();
         WandManager manager = BuildersWand.getWandManager();
         manager.registerWands();
-        plugin.getLogger().info("BuildersWand configuration reloaded.");
+        Util.debug("BuildersWand configuration reloaded.");
     }
 
     public static List<Wand> getAllWands() {
-        return wandConfigs.values().stream().toList();
+        return new ArrayList<>(wandConfigs.values());
     }
 
     public static boolean isPlacementQueueEnabled() {
@@ -152,5 +213,17 @@ public class ConfigManager {
 
     public static int getMaxBlocksPerTick() {
         return maxBlocksPerTick;
+    }
+
+    public static boolean shouldDestroyInvalidWands() {
+        return destroyInvalidWands;
+    }
+
+    public static String getInvalidWandMessage() {
+        return invalidWandMessage;
+    }
+
+    public static boolean getDebugMode() {
+        return debugModeEnabled;
     }
 }

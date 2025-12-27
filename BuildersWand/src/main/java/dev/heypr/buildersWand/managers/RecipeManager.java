@@ -1,6 +1,7 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -31,14 +32,14 @@ public class RecipeManager {
 
                 for (Map.Entry<Character, Material> entry : wand.getRecipeIngredients().entrySet()) {
                     recipe.setIngredient(entry.getKey(), entry.getValue());
-                    plugin.getLogger().info("Set ingredient '" + entry.getKey() + "' to " + entry.getValue());
-                    plugin.getLogger().info("Current recipe shape: " + String.join(", ", wand.getRecipeShape()));
+                    Util.debug("Set ingredient '" + entry.getKey() + "' to " + entry.getValue());
+                    Util.debug("Current recipe shape: " + String.join(", ", wand.getRecipeShape()));
                 }
 
-                plugin.getLogger().info("Registering crafting recipe for wand ID: " + wand.getId());
+                Util.debug("Registering crafting recipe for wand ID: " + wand.getId());
 
                 BuildersWand.getInstance().getServer().addRecipe(recipe, true);
-                plugin.getLogger().info("Successfully registered crafting recipe for wand ID: " + wand.getId());
+                Util.debug("Successfully registered crafting recipe for wand ID: " + wand.getId());
             }
         }
     }

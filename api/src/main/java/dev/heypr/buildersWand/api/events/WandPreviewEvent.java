@@ -37,7 +37,7 @@ public class WandPreviewEvent extends PlayerEvent implements Cancellable {
 
     /**
      * Gets the set of blocks that are about to be shown in the preview.
-     * This set is mutable, allowing for modification (add/remove blocks).
+     * This set is mutable, allowing for easy modification.
      *
      * @return A mutable set of blocks to be previewed.
      */
@@ -46,9 +46,9 @@ public class WandPreviewEvent extends PlayerEvent implements Cancellable {
     }
 
     /**
-     * Sets the blocks that will be shown in the preview.
+     * Sets the blocks that will be placed.
      *
-     * @param previewBlocks The new set of blocks to be previewed.
+     * @param previewBlocks The new set of blocks to be placed.
      */
     public void setPreviewBlocks(Set<Block> previewBlocks) {
         this.previewBlocks = previewBlocks;

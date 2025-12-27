@@ -10,7 +10,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 public class WandItemImpl implements WandItem {
 
@@ -18,7 +17,7 @@ public class WandItemImpl implements WandItem {
     private final Wand wandConfig;
 
     public WandItemImpl(ItemStack wandStack) {
-        this.wandStack = Objects.requireNonNull(wandStack, "ItemStack cannot be null");
+        this.wandStack = wandStack;
         this.wandConfig = WandManager.getWand(wandStack);
     }
 

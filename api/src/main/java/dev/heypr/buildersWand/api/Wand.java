@@ -2,17 +2,24 @@ package dev.heypr.buildersWand.api;
 
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class Wand {
-    private final int id;
+    public enum WandType {
+        STANDARD,
+        STATIC
+    }
+
+    private final String id;
     private final String name;
     private final Material material;
     private final List<String> lore;
+    private final WandType wandType;
+    private final int staticLength;
+    private final int staticWidth;
     private final int maxSize;
     private final String maxSizeText;
     private final int maxRayTraceDistance;
@@ -37,11 +44,15 @@ public class Wand {
     private final boolean craftingRecipeEnabled;
     private final List<String> recipeShape;
     private final Map<Character, Material> recipeIngredients;
+    private final int undoHistorySize;
 
-    public Wand(int id,
+    public Wand(String id,
                 String name,
                 Material material,
                 List<String> lore,
+                WandType wandType,
+                int staticLength,
+                int staticWidth,
                 int maxSize,
                 String maxSizeText,
                 int maxRayTraceDistance,
@@ -65,11 +76,15 @@ public class Wand {
                 boolean isCraftable,
                 boolean craftingRecipeEnabled,
                 List<String> recipeShape,
-                Map<Character, Material> recipeIngredients) {
+                Map<Character, Material> recipeIngredients,
+                int undoHistorySize) {
         this.id = id;
         this.name = name;
         this.material = material;
         this.lore = lore;
+        this.wandType = wandType;
+        this.staticLength = staticLength;
+        this.staticWidth = staticWidth;
         this.maxSize = maxSize;
         this.maxSizeText = maxSizeText;
         this.maxRayTraceDistance = maxRayTraceDistance;
@@ -94,9 +109,10 @@ public class Wand {
         this.craftingRecipeEnabled = craftingRecipeEnabled;
         this.recipeShape = recipeShape;
         this.recipeIngredients = recipeIngredients;
+        this.undoHistorySize = undoHistorySize;
     }
 
-    public int getId() {
+    public String getId() {
         return id;
     }
 
@@ -112,6 +128,18 @@ public class Wand {
         List<TextComponent> finalLore = new ArrayList<>();
         for (String line : lore) finalLore.add(Util.toComponent(line));
         return finalLore;
+    }
+
+    public WandType getWandType() {
+        return wandType;
+    }
+
+    public int getStaticLength() {
+        return staticLength;
+    }
+
+    public int getStaticWidth() {
+        return staticWidth;
     }
 
     public int getMaxSize() {
@@ -208,5 +236,9 @@ public class Wand {
 
     public Map<Character, Material> getRecipeIngredients() {
         return recipeIngredients;
+    }
+
+    public int getUndoHistorySize() {
+        return undoHistorySize;
     }
 }

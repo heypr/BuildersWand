@@ -41,12 +41,12 @@ public class BuildersWand extends JavaPlugin {
         getCommand("reloadbuilderswand").setExecutor(new ReloadWandCommand());
         getCommand("givewand").setExecutor(new GiveWandCommand());
         new Metrics(this, 27729);
-        getLogger().info("BuildersWand enabled!");
+        Util.log("BuildersWand enabled!");
     }
 
     @Override
     public void onDisable() {
-        getLogger().info("BuildersWand disabled.");
+        Util.log("BuildersWand disabled.");
     }
 
     public static BuildersWand getInstance() {

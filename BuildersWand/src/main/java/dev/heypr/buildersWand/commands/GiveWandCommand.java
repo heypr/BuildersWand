@@ -38,15 +38,7 @@ public class GiveWandCommand implements CommandExecutor, TabCompleter {
             player = target;
         }
 
-        int wandId;
-
-        try {
-            wandId = Integer.parseInt(args[0]);
-        }
-        catch (NumberFormatException e) {
-            sender.sendMessage(Util.toPrefixedComponent("&cInvalid wand ID."));
-            return true;
-        }
+        String wandId = args[0];
 
         Wand wand = WandManager.getWandConfig(wandId);
 

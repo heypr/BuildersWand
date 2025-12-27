@@ -61,6 +61,6 @@ public class PlacementQueueManager {
     }
 
     private boolean isReplaceable(Material material) {
-        return WandListener.REPLACEABLE.contains(material);
+        return BlockFinder.REPLACEABLE.contains(material);
     }
 }

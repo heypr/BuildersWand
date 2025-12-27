@@ -6,24 +6,20 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.regions.RegionContainer;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Util;
-import dev.heypr.buildersWand.api.ModifiableWandConfig;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.api.events.WandPlaceEvent;
 import dev.heypr.buildersWand.api.events.WandPreviewEvent;
-import dev.heypr.buildersWand.managers.ConfigManager;
-import dev.heypr.buildersWand.managers.PlacementQueueManager;
-import dev.heypr.buildersWand.managers.WandManager;
-import dev.heypr.buildersWand.managers.WandSession;
+import dev.heypr.buildersWand.managers.*;
 import me.angeschossen.lands.api.LandsIntegration;
 import me.angeschossen.lands.api.flags.type.Flags;
 import me.angeschossen.lands.api.land.LandWorld;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -40,10 +36,10 @@ import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.RayTraceResult;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class WandListener implements Listener {
     private static WandListener instance;
-    private final Set<Block> extrudedBlocks = new HashSet<>();
     private final Map<UUID, WandSession> sessions = new HashMap<>();
 
     public WandListener() {
@@ -97,16 +93,12 @@ public class WandListener implements Listener {
     @EventHandler
     public void onMoveEvent(PlayerMoveEvent event) {
         Player player = event.getPlayer();
-
         ItemStack wandItem = player.getInventory().getItemInMainHand();
-        if (!WandManager.isWand(wandItem)) {
-            sessions.remove(player.getUniqueId());
-            return;
-        }
-
+        if (!WandManager.isWand(wandItem)) return;
         Wand wand = WandManager.getWand(wandItem);
-
-        if (wand.generatePreviewOnMove()) generatePreview(player, wand);
+        if (wand != null && wand.generatePreviewOnMove()) {
+            generatePreview(player, wand);
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -114,8 +106,21 @@ public class WandListener implements Listener {
         Player player = event.getPlayer();
         ItemStack wandItem = player.getInventory().getItemInMainHand();
         if (!WandManager.isWand(wandItem)) return;
-
         Wand wand = WandManager.getWand(wandItem);
+        if (wand == null) {
+            Util.error("Wand configuration not found for item held by player " + player.getName());
+            Util.error("Wand internal name: " + WandManager.getWandID(wandItem));
+            if (ConfigManager.shouldDestroyInvalidWands()) {
+                Util.error("Removing misconfigured wand from their inventory...");
+                player.getInventory().removeItem(wandItem);
+                player.sendMessage(Util.toPrefixedComponent(ConfigManager.getInvalidWandMessage()));
+            }
+            else {
+                Util.error("Misconfigured wand not removed due to configuration option.");
+            }
+            return;
+        }
+
         if (!event.getAction().isRightClick() || event.getHand() != EquipmentSlot.HAND) return;
 
         event.setCancelled(true);
@@ -128,12 +133,6 @@ public class WandListener implements Listener {
 
         if (session.previewBlocks.isEmpty()) {
             generatePreview(player, wand);
-            if (session.previewBlocks.isEmpty()) {
-                player.sendActionBar(Util.toPrefixedComponent("&4No blocks available for preview."));
-            }
-            else {
-                player.sendActionBar(Util.toPrefixedComponent("&ePreview generated. Right click again to place."));
-            }
             return;
         }
 
@@ -165,17 +164,24 @@ public class WandListener implements Listener {
             return;
         }
 
-        Set<Block> finalBlocksToPlace = session.previewBlocks;
-
+        Set<Block> finalBlocksToPlace = new HashSet<>(session.previewBlocks);
         if (ConfigManager.shouldFireBlockPlaceEvent()) {
             WandPlaceEvent wandEvent = new WandPlaceEvent(player, wandItem, wand, session.previewBlocks);
             Bukkit.getPluginManager().callEvent(wandEvent);
-
-            if (wandEvent.isCancelled()) {
-                return;
-            }
-
+            if (wandEvent.isCancelled()) return;
             finalBlocksToPlace = wandEvent.getBlocksToPlace();
+        }
+
+        if (wand.getUndoHistorySize() != 0) {
+            List<BlockState> currentAction = new ArrayList<>();
+            for (Block block : finalBlocksToPlace) {
+                currentAction.add(block.getState());
+            }
+            session.undoHistory.push(currentAction);
+        }
+
+        if (session.undoHistory.size() > wand.getUndoHistorySize() && wand.getUndoHistorySize() != -1) {
+            session.undoHistory.removeFirst();
         }
 
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
@@ -198,6 +204,7 @@ public class WandListener implements Listener {
         if (WandManager.isWandDurabilityEnabled(wandItem)) {
             if (WandManager.getWandDurability(wandItem) <= 1) {
                 player.getInventory().removeItem(wandItem);
+                // todo: add configurable break sound
             }
             else {
                 WandManager.decrementWandDurability(wandItem);
@@ -212,6 +219,47 @@ public class WandListener implements Listener {
         }
     }
 
+    @EventHandler(ignoreCancelled = true)
+    public void onUndoAction(PlayerInteractEvent event) {
+        Player player = event.getPlayer();
+        if (!event.getAction().isLeftClick() || event.getHand() != EquipmentSlot.HAND) return;
+        if (!player.isSneaking()) return;
+
+        ItemStack wandItem = player.getInventory().getItemInMainHand();
+        if (!WandManager.isWand(wandItem)) return;
+        Wand wand = WandManager.getWand(wandItem);
+        if (wand == null) {
+            Util.error("Wand configuration not found for item held by player " + player.getName());
+            Util.error("Wand internal name: " + WandManager.getWandID(wandItem));
+            Util.error("Removing misconfigured wand from their inventory...");
+            player.getInventory().removeItem(wandItem);
+            player.sendMessage(Util.toPrefixedComponent("&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."));
+            return;
+        }
+
+        event.setCancelled(true);
+
+        WandSession session = getSession(player);
+        if (session.undoHistory.isEmpty()) {
+            player.sendActionBar(Util.toPrefixedComponent("&cNothing to undo!"));
+            return;
+        }
+
+        List<BlockState> lastAction = session.undoHistory.pop();
+
+        if (wand.consumesItems()) {
+            List<ItemStack> itemsToReturn = new ArrayList<>();
+
+            lastAction.forEach(blockState -> {
+                itemsToReturn.add(new ItemStack(blockState.getType()));
+            });
+
+            player.give(itemsToReturn);
+        }
+
+        player.sendActionBar(Util.toPrefixedComponent("&aAction undone! " + session.undoHistory.size() + " undoes remaining."));
+    }
+
     public void generatePreview(Player player, Wand wand) {
         RayTraceResult rtr = player.rayTraceBlocks(wand.getMaxRayTraceDistance(), FluidCollisionMode.NEVER);
         if (rtr == null || rtr.getHitBlock() == null || rtr.getHitBlockFace() == null) return;
@@ -222,111 +270,99 @@ public class WandListener implements Listener {
 
         Block hitBlock = rtr.getHitBlock();
         BlockFace face = rtr.getHitBlockFace();
-
-        if (hitBlock.equals(session.lastTargetBlock) && face == session.lastTargetFace) return;
+        if (hitBlock.equals(session.lastTargetBlock) && face == session.lastTargetFace && !session.previewBlocks.isEmpty()) return;
         if (wand.getBlockedMaterials().contains(hitBlock.getType())) return;
 
-        session.previewBlocks.clear();
+        if (session.currentCalculation != null && !session.currentCalculation.isDone()) {
+            session.currentCalculation.cancel(true);
+        }
+
         session.lastTargetBlock = hitBlock;
         session.lastTargetFace = face;
 
-        extrudedBlocks.clear();
-
-        getExtrudedPlane(hitBlock, face, hitBlock.getType(), wand.getMaxSize());
-
-        for (Block b : extrudedBlocks) {
-            Block target = b.getRelative(face);
-            if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) continue;
-            if (BuildersWand.isLandsEnabled() && !isInsideLand(player, target.getLocation())) continue;
-            if (BuildersWand.isWorldGuardEnabled() && !checkWG(player, target.getLocation())) continue;
-
-            if (target.getType().isAir() && isReplaceable(target.getType())) {
-                session.previewBlocks.add(target);
+        session.currentCalculation = CompletableFuture.supplyAsync(() -> {
+            if (wand.getWandType() == Wand.WandType.STATIC) {
+                return BlockFinder.getStaticBlocks(hitBlock, face, wand.getStaticLength(), wand.getStaticWidth());
             }
-        }
-
-        if (ConfigManager.shouldFireWandPreviewEvent()) {
-            WandPreviewEvent previewEvent = new WandPreviewEvent(player, wand, session.previewBlocks);
-            Bukkit.getPluginManager().callEvent(previewEvent);
-
-            session.previewBlocks = previewEvent.getPreviewBlocks();
-
-            if (previewEvent.isCancelled()) {
-                return;
+            else {
+                return BlockFinder.findConnectedBlocks(hitBlock, face, wand.getMaxSize(), wand.getBlockedMaterials());
             }
-        }
+        }).thenAcceptAsync(sourceBlocks -> {
+            Set<Block> validTargets = new HashSet<>();
+            for (Block source : sourceBlocks) {
+                Block target = source.getRelative(face);
+                if (isValidLocation(player, target)) {
+                    validTargets.add(target);
+                }
+            }
 
-        long now = System.currentTimeMillis();
-        long last = session.lastRightClickTime;
-        float cooldown = wand.getCooldown() * 1000L;
+            Bukkit.getScheduler().runTask(BuildersWand.getInstance(), () -> {
+                session.previewBlocks = validTargets;
+                if (ConfigManager.shouldFireWandPreviewEvent()) {
+                    WandPreviewEvent previewEvent = new WandPreviewEvent(player, wand, session.previewBlocks);
+                    Bukkit.getPluginManager().callEvent(previewEvent);
+                    session.previewBlocks = previewEvent.getPreviewBlocks();
+                }
 
-        if (now - last < cooldown) {
-            player.sendActionBar(Util.toPrefixedComponent("&4Please wait " + (int)((cooldown - (now - last)) / 1000) + " seconds before using the wand again."));
-            return;
-        }
+                if (session.particleTask == null || session.particleTask.isCancelled()) {
+                    startParticleTask(player, wand, session);
+                }
+            });
+        });
+    }
 
-        if (session.particleTask != null) {
-            session.particleTask.cancel();
-        }
+    private boolean isValidLocation(Player player, Block target) {
+        if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) return false;
+        if (BuildersWand.isLandsEnabled() && !isInsideLand(player, target.getLocation())) return false;
+        if (BuildersWand.isWorldGuardEnabled() && !checkWG(player, target.getLocation())) return false;
+        return BlockFinder.isReplaceable(target);
+    }
 
-        BukkitRunnable task = new BukkitRunnable() {
+    private void startParticleTask(Player player, Wand wand, WandSession session) {
+        if (session.particleTask != null) session.particleTask.cancel();
+        session.particleTask = new BukkitRunnable() {
             @Override
             public void run() {
-                if (!player.isOnline()) {
+                if (!player.isOnline() || session.previewBlocks.isEmpty()) {
                     this.cancel();
+                    session.particleTask = null;
                     return;
                 }
-
-                if (session.previewBlocks.isEmpty()) {
-                    this.cancel();
-                    return;
-                }
-
                 ItemStack wandItem = player.getInventory().getItemInMainHand();
-                if (!WandManager.isWand(wandItem)) this.cancel();
+                if (!WandManager.isWand(wandItem)) {
+                    this.cancel();
+                    session.particleTask = null;
+                    return;
+                }
+                World world = player.getWorld();
+                Particle particle;
+                try {
+                    particle = Particle.valueOf(wand.getPreviewParticle());
+                }
+                catch (Exception e) {
+                    particle = Particle.DUST;
+                }
+                Particle.DustOptions dustOptions = particle == Particle.DUST ? new Particle.DustOptions(Color.fromRGB(wand.getPreviewParticleOptionsRed(), wand.getPreviewParticleOptionsGreen(), wand.getPreviewParticleOptionsBlue()), (float) wand.getPreviewParticleOptionsSize()) : null;
+                for (Block preview : session.previewBlocks) {
+                    if (!preview.getWorld().equals(world)) continue;
 
-                World world = hitBlock.getWorld();
-                List<Block> locations = new ArrayList<>(session.previewBlocks);
-
-                for (Block preview : locations) {
-                    Location loc = preview.getLocation();
-                    double offsetX = wand.getPreviewParticleOffsetX();
-                    double offsetY = wand.getPreviewParticleOffsetY();
-                    double offsetZ = wand.getPreviewParticleOffsetZ();
-
-                    double speed = wand.getPreviewParticleSpeed();
-                    int r = wand.getPreviewParticleOptionsRed();
-                    int g = wand.getPreviewParticleOptionsGreen();
-                    int b = wand.getPreviewParticleOptionsBlue();
-                    int size = wand.getPreviewParticleOptionsSize();
-                    int count = wand.getPreviewParticleCount();
-                    Particle particle;
-                    try {
-                        particle = Particle.valueOf(wand.getPreviewParticle());
-                        if (particle == Particle.DUST) {
-                            world.spawnParticle(particle, loc.add(0.5, 0.5, 0.5), count, offsetX, offsetY, offsetZ, speed, new Particle.DustOptions(Color.fromRGB(r, g, b), size));
-                        }
-                        else {
-                            world.spawnParticle(particle, loc.add(0.5, 0.5, 0.5), count);
-                        }
+                    Location loc = preview.getLocation().add(0.5, 0.5, 0.5);
+                    if (dustOptions != null) {
+                        world.spawnParticle(Particle.DUST, loc, wand.getPreviewParticleCount(), wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(), wand.getPreviewParticleSpeed(), dustOptions);
                     }
-                    catch (Exception e) {
-                        world.spawnParticle(Particle.DUST, loc.add(0.5, 0.5, 0.5), 1, new Particle.DustOptions(Color.WHITE, 1));
+                    else {
+                        world.spawnParticle(particle, loc, wand.getPreviewParticleCount(), wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(), wand.getPreviewParticleSpeed());
                     }
                 }
             }
         };
-        task.runTaskTimer(BuildersWand.getInstance(), 0L, 5L);
-        session.particleTask = task;
+        session.particleTask.runTaskTimer(BuildersWand.getInstance(), 0L, 5L);
     }
 
     private boolean checkWG(Player player, Location location) {
         LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-        com.sk89q.worldedit.util.Location wgLocation = BukkitAdapter.adapt(location);
-        RegionContainer container = WorldGuard.getInstance().getPlatform().getRegionContainer();
-        RegionQuery query = container.createQuery();
-
-        return query.testBuild(wgLocation, localPlayer);
+        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
+        return query.testBuild(BukkitAdapter.adapt(location), localPlayer);
     }
 
     private boolean isInsideIsland(Location location) {
@@ -337,27 +373,7 @@ public class WandListener implements Listener {
     private boolean isInsideLand(Player player, Location location) {
         LandsIntegration api = LandsIntegration.of(BuildersWand.getInstance());
         LandWorld world = api.getWorld(location.getWorld());
-        if (world == null) return false;
-        return world.hasRoleFlag(player.getUniqueId(), location, Flags.BLOCK_PLACE);
-    }
-
-    public void getExtrudedPlane(Block origin, BlockFace face, Material type, int max) {
-        Queue<Block> queue = new LinkedList<>();
-        Set<Block> visited = new HashSet<>();
-        queue.add(origin);
-        visited.add(origin);
-
-        while (!queue.isEmpty() && visited.size() < max) {
-            Block current = queue.poll();
-            extrudedBlocks.add(current);
-            for (BlockFace dir : getPlaneDirections(face)) {
-                Block neighbor = current.getRelative(dir);
-                if (!visited.contains(neighbor) && neighbor.getType().equals(type)) {
-                    queue.add(neighbor);
-                    visited.add(neighbor);
-                }
-            }
-        }
+        return world != null && world.hasRoleFlag(player.getUniqueId(), location, Flags.BLOCK_PLACE);
     }
 
     public void unlockPlayer(Player player) {
@@ -367,9 +383,7 @@ public class WandListener implements Listener {
     public int getItemCount(Player player, Material material) {
         int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                count += item.getAmount();
-            }
+            if (item != null && item.getType() == material) count += item.getAmount();
         }
         return count;
     }
@@ -378,7 +392,6 @@ public class WandListener implements Listener {
         int remaining = amount;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item == null || item.getType() != material) continue;
-
             int amt = item.getAmount();
             if (amt <= remaining) {
                 remaining -= amt;
@@ -389,47 +402,5 @@ public class WandListener implements Listener {
                 break;
             }
         }
-    }
-
-    public BlockFace[] getPlaneDirections(BlockFace clickedFace) {
-        return switch (clickedFace) {
-            case UP, DOWN -> new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.EAST, BlockFace.WEST};
-            case NORTH, SOUTH -> new BlockFace[]{BlockFace.EAST, BlockFace.WEST, BlockFace.UP, BlockFace.DOWN};
-            case EAST, WEST -> new BlockFace[]{BlockFace.NORTH, BlockFace.SOUTH, BlockFace.UP, BlockFace.DOWN};
-            default -> new BlockFace[0];
-        };
-    }
-
-    public static final Set<Material> REPLACEABLE = EnumSet.of(
-            Material.AIR,
-            Material.CAVE_AIR,
-            Material.VOID_AIR,
-            Material.SHORT_GRASS,
-            Material.TALL_GRASS,
-            Material.FERN,
-            Material.LARGE_FERN,
-            Material.DEAD_BUSH,
-            Material.DANDELION,
-            Material.POPPY,
-            Material.BLUE_ORCHID,
-            Material.ALLIUM,
-            Material.AZURE_BLUET,
-            Material.RED_TULIP,
-            Material.ORANGE_TULIP,
-            Material.WHITE_TULIP,
-            Material.PINK_TULIP,
-            Material.OXEYE_DAISY,
-            Material.CORNFLOWER,
-            Material.LILY_OF_THE_VALLEY,
-            Material.SUNFLOWER,
-            Material.SWEET_BERRY_BUSH,
-            Material.SNOW,
-            Material.SEAGRASS,
-            Material.TALL_SEAGRASS,
-            Material.MOSS_CARPET
-    );
-
-    private boolean isReplaceable(Material material) {
-        return REPLACEABLE.contains(material);
     }
 }

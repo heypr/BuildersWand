@@ -33,7 +33,7 @@ public class ApiImplementation extends BuildersWandAPI {
     }
 
     @Override
-    public ModifiableWandConfig getModifiableConfig(int wandId) {
+    public ModifiableWandConfig getModifiableConfig(String wandId) {
         if (plugin.getConfig().isConfigurationSection("wands." + wandId)) {
             return new ModifiableWandConfig(plugin.getConfig(), wandId);
         }
@@ -41,12 +41,12 @@ public class ApiImplementation extends BuildersWandAPI {
     }
 
     @Override
-    public Wand getWandById(int wandId) {
+    public Wand getWandById(String wandId) {
         return WandManager.getWandConfig(wandId);
     }
 
     @Override
-    public ItemStack createWand(int wandId) {
+    public ItemStack createWand(String wandId) {
         Wand wand = getWandById(wandId);
         return wand != null ? WandManager.createWandItem(wand) : null;
     }

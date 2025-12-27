@@ -39,11 +39,11 @@ public abstract class BuildersWandAPI {
 
     public abstract WandItem getWandItem(ItemStack item);
 
-    public abstract ModifiableWandConfig getModifiableConfig(int wandId);
+    public abstract ModifiableWandConfig getModifiableConfig(String wandId);
 
-    public abstract Wand getWandById(int wandId);
+    public abstract Wand getWandById(String wandId);
 
-    public abstract ItemStack createWand(int wandId);
+    public abstract ItemStack createWand(String wandId);
 
     public abstract Collection<Wand> getAllRegisteredWands();
 

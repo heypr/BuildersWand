@@ -13,7 +13,7 @@ public class ModifiableWandConfig {
     private final String recipeBasePath;
     private final String basePath;
 
-    public ModifiableWandConfig(FileConfiguration config, int wandId) {
+    public ModifiableWandConfig(FileConfiguration config, String wandId) {
         this.config = config;
         this.basePath = "wands." + wandId + ".";
         this.recipeBasePath = basePath + "craftingRecipe.";

@@ -22,7 +22,7 @@ BuildersWand *does* feature an API, but currently there is no documentation nor 
 
 # this is the prefix for all messages sent by the plugin.
 # this is an optional setting, if you remove it the default prefix will be used
-# supports minimessage formatting
+# supports minimessage formatting (along with the display name and lore of wands)
 prefix: "&7[&bBuildersWand&7] &r"
 
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
@@ -40,18 +40,32 @@ placementQueue:
   enabled: true
   maxBlocksPerTick: 20 # max blocks to place per tick
 
+# Whether to automatically remove invalid wands from players' inventories
+# An invalid wand is one that has been removed from the config or has otherwise become invalid
+# this should be kept disabled until you are sure your wands are configured correctly
+destroyInvalidWands: 
+  enabled: false
+  message: "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."
+
+# Only recommended when troubleshooting issues since it can generate a lot of log spam. defaults to false
+debug: false
+
 wands:
-  1:
+  my_special_wand:
     name: "&3Builders Wand"
     material: "BLAZE_ROD"
     lore:
       - "&7A powerful wand for <blue>building!"
       - "&7Use it <green>wisely."
+    wandType: STANDARD # defaults to STANDARD. valid types: STANDARD & STATIC
+    staticLength: 5 # only used if wandType is STATIC, otherwise ignored
+    staticWidth: 5 # only used if wandType is STATIC, otherwise ignored
     maxSize: 8 # max block search & placement size
     maxSizeText: "&3Max Size: {maxSize}"
     maxRayTraceDistance: 16 # max distance that the plugin will search for a block in a given direction
     consumeItems: true # whether the wand should consume items from the player's inventory when placing blocks
     generatePreviewOnMove: false # whether to generate a preview (small white particles) of where blocks will be placed when the player moves
+    undoHistorySize: 10 # number of undos to store per player for this wand, defaults to 10. shift left click to undo a placement, input - 1 for unlimited and 0 to disable undoing.
     durability:
       amount: 100
       enabled: true
@@ -64,7 +78,7 @@ wands:
           green: 0
           blue: 0
         size: 1.0
-      count: 5 # number of particles to spawn per block in the preview
+      count: 1 # number of particles to spawn per block in the preview
       offset:
         x: 0
         y: 0
@@ -84,5 +98,4 @@ wands:
       ingredients: # ensure the ingredients listed here are valid materials
         E: EMERALD
         S: STICK
-
 ```
