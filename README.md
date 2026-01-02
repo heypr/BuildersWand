@@ -54,7 +54,7 @@ updater:
   notifyPermission: "builderswand.notify.update"
   notify:
     console: true
-    ingame: false
+    ingame: true
 
 # Only recommended when troubleshooting issues since it can generate a lot of log spam. defaults to false
 debug: false
