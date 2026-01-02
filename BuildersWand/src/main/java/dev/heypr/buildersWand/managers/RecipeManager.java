@@ -23,7 +23,7 @@ public class RecipeManager {
     public void registerRecipes() {
         for (Wand wand : BuildersWand.getWandManager().registeredWands()) {
             if (wand.isCraftingRecipeEnabled()) {
-                NamespacedKey key = new NamespacedKey(plugin, "wand_recipe");
+                NamespacedKey key = new NamespacedKey(plugin, "wand_recipe_" + wand.getId());
                 ItemStack result = WandManager.createWandItem(wand);
 
                 ShapedRecipe recipe = new ShapedRecipe(key, result);
@@ -48,7 +48,7 @@ public class RecipeManager {
         Iterator<Recipe> iterator = BuildersWand.getInstance().getServer().recipeIterator();
         while (iterator.hasNext()) {
             Recipe recipe = iterator.next();
-            if (recipe instanceof ShapedRecipe shapedRecipe && shapedRecipe.getKey().getKey().equals("wand_recipe")) {
+            if (recipe instanceof ShapedRecipe shapedRecipe && shapedRecipe.getKey().getKey().startsWith("wand_recipe")) {
                 iterator.remove();
             }
         }

@@ -1,6 +1,7 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
 import org.bukkit.Material;
@@ -19,8 +20,14 @@ public class ConfigManager {
     private static boolean fireWandPreviewEvent;
     private static boolean debugModeEnabled;
     private static boolean destroyInvalidWands;
+    private static boolean updaterEnabled;
+    private static boolean updaterNotifyConsole;
+    private static boolean updaterNotifyInGame;
     private static String invalidWandMessage;
+    private static String updaterNotifyMessage;
+    private static String updaterNotifyPermission;
     private static int maxBlocksPerTick;
+    private static long updaterIntervalMinutes;
 
     public static void load() {
         Util.debug("Starting ConfigManager load sequence...");
@@ -50,6 +57,13 @@ public class ConfigManager {
         invalidWandMessage = config.getString("destroyInvalidWands.message", "&cYour wand has been removed because it is no longer valid. Please contact an administrator if you believe this is an error.");
 
         debugModeEnabled = config.getBoolean("debug", false);
+
+        updaterEnabled = config.getBoolean("updater.enabled", true);
+        updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
+        updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
+        updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
+        updaterNotifyMessage = config.getString("updater.notifyMessage", "&aAn update for BuildersWand is available! Check console for more info.");
+        updaterNotifyPermission = config.getString("updater.notifyPermission", "builderswand.notify.update");
 
         Util.debug("Queue Enabled: " + placementQueueEnabled);
         Util.debug("Max Blocks Per Tick: " + maxBlocksPerTick);
@@ -192,6 +206,7 @@ public class ConfigManager {
         load();
         WandManager manager = BuildersWand.getWandManager();
         manager.registerWands();
+        Updater.start(plugin);
         Util.debug("BuildersWand configuration reloaded.");
     }
 
@@ -225,5 +240,29 @@ public class ConfigManager {
 
     public static boolean getDebugMode() {
         return debugModeEnabled;
+    }
+
+    public static boolean isUpdaterEnabled() {
+        return updaterEnabled;
+    }
+
+    public static long getUpdaterIntervalMinutes() {
+        return updaterIntervalMinutes;
+    }
+
+    public static boolean notifyUpdateInConsole() {
+        return updaterNotifyConsole;
+    }
+
+    public static boolean notifyUpdateInGame() {
+        return updaterNotifyInGame;
+    }
+
+    public static String getUpdaterNotifyMessage() {
+        return updaterNotifyMessage;
+    }
+
+    public static String getUpdaterNotifyPermission() {
+        return updaterNotifyPermission;
     }
 }

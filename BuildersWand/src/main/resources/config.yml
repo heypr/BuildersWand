@@ -27,6 +27,15 @@ destroyInvalidWands:
   enabled: false
   message: "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."
 
+updater:
+  enabled: true
+  checkIntervalMinutes: 60
+  notifyMessage: "&aAn update for BuildersWand is available! Check console for more info." # this message is sent in chat to those who have the permission node listed below
+  notifyPermission: "builderswand.notify.update"
+  notify:
+    console: true
+    ingame: false
+
 # Only recommended when troubleshooting issues since it can generate a lot of log spam. defaults to false
 debug: false
 

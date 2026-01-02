@@ -1,5 +1,5 @@
 name: BuildersWand
-version: '1.2.0'
+version: '1.3.0'
 main: dev.heypr.buildersWand.BuildersWand
 api-version: '1.21'
 prefix: BuildersWand
@@ -8,6 +8,10 @@ softdepend:
   - WorldGuard
   - Lands
 load: STARTUP
+permissions:
+  builderswand.notify.update:
+    description: Allows receiving update notifications (Default config value).
+    default: op
 commands:
   givewand:
     description: Give yourself a Builders Wand

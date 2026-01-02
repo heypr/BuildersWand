@@ -35,17 +35,24 @@ public class BuildersWand extends JavaPlugin {
 
         saveDefaultConfig();
         ConfigManager.load();
+
         BuildersWandAPI.setInstance(new ApiImplementation(this));
         BuildersWand.getWandManager().registerWands();
+
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
+
         getCommand("reloadbuilderswand").setExecutor(new ReloadWandCommand());
         getCommand("givewand").setExecutor(new GiveWandCommand());
+
         new Metrics(this, 27729);
+
+        Updater.start(this);
         Util.log("BuildersWand enabled!");
     }
 
     @Override
     public void onDisable() {
+        Updater.stop();
         Util.log("BuildersWand disabled.");
     }
 
