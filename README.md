@@ -43,9 +43,18 @@ placementQueue:
 # Whether to automatically remove invalid wands from players' inventories
 # An invalid wand is one that has been removed from the config or has otherwise become invalid
 # this should be kept disabled until you are sure your wands are configured correctly
-destroyInvalidWands: 
+destroyInvalidWands:
   enabled: false
   message: "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."
+
+updater:
+  enabled: true
+  checkIntervalMinutes: 60
+  notifyMessage: "&aAn update for BuildersWand is available! Check console for more info." # this message is sent in chat to those who have the permission node listed below
+  notifyPermission: "builderswand.notify.update"
+  notify:
+    console: true
+    ingame: false
 
 # Only recommended when troubleshooting issues since it can generate a lot of log spam. defaults to false
 debug: false
@@ -65,7 +74,7 @@ wands:
     maxRayTraceDistance: 16 # max distance that the plugin will search for a block in a given direction
     consumeItems: true # whether the wand should consume items from the player's inventory when placing blocks
     generatePreviewOnMove: false # whether to generate a preview (small white particles) of where blocks will be placed when the player moves
-    undoHistorySize: 10 # number of undos to store per player for this wand, defaults to 10. shift left click to undo a placement, input - 1 for unlimited and 0 to disable undoing.
+    undoHistorySize: 10 # number of undoes to store per player for this wand, defaults to 10. shift left click to undo a placement, input - 1 for unlimited and 0 to disable undoing.
     durability:
       amount: 100
       enabled: true
