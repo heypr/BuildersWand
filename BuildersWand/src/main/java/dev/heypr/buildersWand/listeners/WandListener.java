@@ -1,21 +1,15 @@
 package dev.heypr.buildersWand.listeners;
 
-import com.bgsoftware.superiorskyblock.api.SuperiorSkyblockAPI;
-import com.bgsoftware.superiorskyblock.api.island.Island;
-import com.sk89q.worldedit.bukkit.BukkitAdapter;
-import com.sk89q.worldguard.LocalPlayer;
-import com.sk89q.worldguard.WorldGuard;
-import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.protection.regions.RegionQuery;
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.api.events.WandPlaceEvent;
 import dev.heypr.buildersWand.api.events.WandPreviewEvent;
+import dev.heypr.buildersWand.hooks.BentoBoxHook;
+import dev.heypr.buildersWand.hooks.LandsHook;
+import dev.heypr.buildersWand.hooks.SuperiorSkyblockHook;
+import dev.heypr.buildersWand.hooks.WorldGuardHook;
 import dev.heypr.buildersWand.managers.*;
-import me.angeschossen.lands.api.LandsIntegration;
-import me.angeschossen.lands.api.flags.type.Flags;
-import me.angeschossen.lands.api.land.LandWorld;
+import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -124,6 +118,12 @@ public class WandListener implements Listener {
         if (!event.getAction().isRightClick() || event.getHand() != EquipmentSlot.HAND) return;
 
         event.setCancelled(true);
+
+        if (!player.hasPermission("builderswand.use." + wand.getId()) && !player.hasPermission("builderswand.use.*")) {
+            player.sendActionBar(Util.toPrefixedComponent("&4You do not have permission to use this wand."));
+            return;
+        }
+
         WandSession session = getSession(player);
 
         if (session.placing) {
@@ -204,7 +204,16 @@ public class WandListener implements Listener {
         if (WandManager.isWandDurabilityEnabled(wandItem)) {
             if (WandManager.getWandDurability(wandItem) <= 1) {
                 player.getInventory().removeItem(wandItem);
-                // todo: add configurable break sound
+                if (wand.isBreakSoundEnabled()) {
+                    if (wand.getBreakSound() == null) {
+                        Util.error("Break sound not configured for wand " + wand.getId() + ". Using default sound.");
+                        player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
+                    }
+                    else {
+                        player.playSound(player.getLocation(), wand.getBreakSound(), 1.0f, 1.0f);
+                    }
+                    player.sendActionBar(wand.getBreakSoundMessage());
+                }
             }
             else {
                 WandManager.decrementWandDurability(wandItem);
@@ -246,16 +255,18 @@ public class WandListener implements Listener {
         }
 
         List<BlockState> lastAction = session.undoHistory.pop();
+        List<ItemStack> itemsToReturn = new ArrayList<>();
 
-        if (wand.consumesItems()) {
-            List<ItemStack> itemsToReturn = new ArrayList<>();
+        for (BlockState oldState : lastAction) {
+            Block currentBlock = oldState.getBlock();
 
-            lastAction.forEach(blockState -> {
-                itemsToReturn.add(new ItemStack(blockState.getType()));
-            });
-
-            player.give(itemsToReturn);
+            if (wand.consumesItems() && !currentBlock.getType().isAir()) {
+                itemsToReturn.add(new ItemStack(currentBlock.getType()));
+            }
+            oldState.update(true, false);
         }
+
+        if (!itemsToReturn.isEmpty() && !player.getGameMode().isInvulnerable()) player.give(itemsToReturn.toArray(new ItemStack[0]));
 
         player.sendActionBar(Util.toPrefixedComponent("&aAction undone! " + session.undoHistory.size() + " undoes remaining."));
     }
@@ -312,9 +323,18 @@ public class WandListener implements Listener {
     }
 
     private boolean isValidLocation(Player player, Block target) {
-        if (BuildersWand.isSkyblockEnabled() && !isInsideIsland(target.getLocation())) return false;
-        if (BuildersWand.isLandsEnabled() && !isInsideLand(player, target.getLocation())) return false;
-        if (BuildersWand.isWorldGuardEnabled() && !checkWG(player, target.getLocation())) return false;
+        if (BuildersWand.isBentoBoxEnabled()) {
+            if (!BentoBoxHook.canBuild(player, target.getLocation())) return false;
+        }
+        if (BuildersWand.isSuperiorSkyblockEnabled()) {
+            if (!SuperiorSkyblockHook.canBuild(player, target.getLocation())) return false;
+        }
+        if (BuildersWand.isLandsEnabled()) {
+            if (!LandsHook.canBuild(player, target.getLocation(), BuildersWand.getInstance())) return false;
+        }
+        if (BuildersWand.isWorldGuardEnabled()) {
+            if (!WorldGuardHook.canBuild(player, target.getLocation())) return false;
+        }
         return BlockFinder.isReplaceable(target);
     }
 
@@ -357,23 +377,6 @@ public class WandListener implements Listener {
             }
         };
         session.particleTask.runTaskTimer(BuildersWand.getInstance(), 0L, 5L);
-    }
-
-    private boolean checkWG(Player player, Location location) {
-        LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(player);
-        RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
-        return query.testBuild(BukkitAdapter.adapt(location), localPlayer);
-    }
-
-    private boolean isInsideIsland(Location location) {
-        Island island = SuperiorSkyblockAPI.getIslandAt(location);
-        return island != null && island.isInsideRange(location);
-    }
-
-    private boolean isInsideLand(Player player, Location location) {
-        LandsIntegration api = LandsIntegration.of(BuildersWand.getInstance());
-        LandWorld world = api.getWorld(location.getWorld());
-        return world != null && world.hasRoleFlag(player.getUniqueId(), location, Flags.BLOCK_PLACE);
     }
 
     public void unlockPlayer(Player player) {

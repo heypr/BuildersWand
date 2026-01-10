@@ -1,8 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
+import dev.heypr.buildersWand.utility.Util;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import net.kyori.adventure.text.TextReplacementConfig;
@@ -100,10 +100,8 @@ public class WandManager {
             Util.debug("Setting display name and building lore...");
             meta.displayName(item.getName());
 
-            Component durabilityText = item.getDurabilityText().replaceText(
-                    TextReplacementConfig.builder().match("\\{durability\\}").replacement(String.valueOf(item.getDurabilityAmount())).build());
-            Component sizeText = item.getMaxSizeText().replaceText(
-                    TextReplacementConfig.builder().match("\\{maxSize\\}").replacement(String.valueOf(item.getMaxSize())).build());
+            Component durabilityText = item.getDurabilityText().replaceText(TextReplacementConfig.builder().match("\\{durability\\}").replacement(String.valueOf(item.getDurabilityAmount())).build());
+            Component sizeText = item.getMaxSizeText().replaceText(TextReplacementConfig.builder().match("\\{maxSize\\}").replacement(String.valueOf(item.getMaxSize())).build());
 
             List<Component> finalLore = new ArrayList<>();
             finalLore.add(durabilityText);

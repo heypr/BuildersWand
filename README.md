@@ -3,8 +3,18 @@
 Introducing BuildersWand! A free, open-source solution that gives you, and your players, the power to build quickly without breaking a sweat.
 
 Relevant commands:
-- /givewand <wand> (Aliases: /gw, /getwand) | Gives you a wand with the given id (/givewand 1 would give you the wand with an id of 1, as seen below).
-- /reloadbuilderswand (Aliases: /rbw, /reloadbw, /reloadwands) | Reloads the plugin, grabbing all changes from the configuration file and loading it into memory. All wands are updated, including ones currently in use by players.
+- `/builderswand` (Aliases: `/bw`) » Main command for the plugin, shows valid usage if run without arguments.
+- `/builderswand reload` (Alias: `/bw reload`) » Reloads wands from the configuration file into memory.
+- `/builderswand list` (Alias: `/bw list`) » Lists all wands currently configured in the plugin.
+- `/builderswand give <wand> <player>` (Alias: `/bw give`) » Gives the specified player the specified wand.
+
+Relevant permissions:
+- `builderswand.admin` » Grants access to all admin commands and permissions.
+- `builderswand.use.<wand>` » Allows the player to use the specified wand. Has wildcard support (e.g., builderswand.use.* to allow all wands).
+- `builderswand.give` » Allows the player to give wands to other players.
+- `builderswand.reload` » Allows the player to reload the plugin configuration.
+- `builderswand.list` » Allows the player to list all configured wands.
+- `builderswand.notify.update` » Allows the player to receive update notifications. This is a configurable permission node.
 
 An example configuration has been given below. If you have any questions, don't hesitate to contact me through my support Discord: https://discord.gg/Drgk3CxrtV
 
@@ -79,8 +89,12 @@ wands:
       amount: 100
       enabled: true
       text: "&3Durability: {durability}"
+      breakSound: # whether to play a sound when the wand breaks
+        enabled: false
+        sound: ENTITY_ITEM_BREAK # valid sounds can be found here: https://jd.papermc.io/paper/1.21.11/org/bukkit/Sound.html
+        message: "&4Your wand broke!"
     previewParticle: # paper-only
-      particle: "DUST" # valid particle names can be found here: https://jd.papermc.io/paper/1.21.10/org/bukkit/Particle.html
+      particle: "DUST" # valid particle names can be found here: https://jd.papermc.io/paper/1.21.11/org/bukkit/Particle.html
       options: # only required for certain particles
         color:
           red: 0

@@ -1,7 +1,9 @@
 package dev.heypr.buildersWand.api;
 
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,9 @@ public class Wand {
     private final int durabilityAmount;
     private final boolean durabilityEnabled;
     private final String durabilityText;
+    private final boolean breakSoundEnabled;
+    private final Sound breakSound;
+    private final String breakSoundMessage;
     private final String previewParticle;
     private final int previewParticleCount;
     private final double previewParticleOffsetX;
@@ -61,6 +66,9 @@ public class Wand {
                 int durabilityAmount,
                 boolean durabilityEnabled,
                 String durabilityText,
+                boolean breakSoundEnabled,
+                Sound breakSound,
+                String breakSoundMessage,
                 String previewParticle,
                 int previewParticleCount,
                 double previewParticleOffsetX,
@@ -93,6 +101,9 @@ public class Wand {
         this.durabilityAmount = durabilityAmount;
         this.durabilityEnabled = durabilityEnabled;
         this.durabilityText = durabilityText;
+        this.breakSoundEnabled = breakSoundEnabled;
+        this.breakSound = breakSound;
+        this.breakSoundMessage = breakSoundMessage;
         this.previewParticle = previewParticle;
         this.previewParticleCount = previewParticleCount;
         this.previewParticleOffsetX = previewParticleOffsetX;
@@ -240,5 +251,17 @@ public class Wand {
 
     public int getUndoHistorySize() {
         return undoHistorySize;
+    }
+
+    public boolean isBreakSoundEnabled() {
+        return breakSoundEnabled;
+    }
+
+    public Sound getBreakSound() {
+        return breakSound;
+    }
+
+    public Component getBreakSoundMessage() {
+        return Util.toPrefixedComponent(breakSoundMessage);
     }
 }

@@ -59,8 +59,12 @@ wands:
       amount: 100
       enabled: true
       text: "&3Durability: {durability}"
+      breakSound: # whether to play a sound when the wand breaks
+        enabled: false
+        sound: ENTITY_ITEM_BREAK # valid sounds can be found here: https://jd.papermc.io/paper/1.21.11/org/bukkit/Sound.html
+        message: "&4Your wand broke!"
     previewParticle: # paper-only
-      particle: "DUST" # valid particle names can be found here: https://jd.papermc.io/paper/1.21.10/org/bukkit/Particle.html
+      particle: "DUST" # valid particle names can be found here: https://jd.papermc.io/paper/1.21.11/org/bukkit/Particle.html
       options: # only required for certain particles
         color:
           red: 0

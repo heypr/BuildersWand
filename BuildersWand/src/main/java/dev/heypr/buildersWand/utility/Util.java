@@ -1,5 +1,6 @@
-package dev.heypr.buildersWand;
+package dev.heypr.buildersWand.utility;
 
+import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.managers.ConfigManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.TextComponent;

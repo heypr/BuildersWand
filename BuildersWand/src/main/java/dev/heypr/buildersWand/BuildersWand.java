@@ -1,14 +1,15 @@
 package dev.heypr.buildersWand;
 
 import dev.heypr.buildersWand.api.BuildersWandAPI;
-import dev.heypr.buildersWand.commands.GiveWandCommand;
-import dev.heypr.buildersWand.commands.ReloadWandCommand;
+import dev.heypr.buildersWand.commands.WandCommand;
 import dev.heypr.buildersWand.impl.ApiImplementation;
 import dev.heypr.buildersWand.listeners.WandListener;
 import dev.heypr.buildersWand.managers.ConfigManager;
 import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.metrics.Metrics;
+import dev.heypr.buildersWand.utility.Util;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -25,6 +26,7 @@ public class BuildersWand extends JavaPlugin {
     public static NamespacedKey PDC_KEY_UUID;
 
     @Override
+    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         instance = this;
         PDC_KEY_ID = new NamespacedKey(this, "builders_wand_id");
@@ -41,8 +43,10 @@ public class BuildersWand extends JavaPlugin {
 
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
 
-        getCommand("reloadbuilderswand").setExecutor(new ReloadWandCommand());
-        getCommand("givewand").setExecutor(new GiveWandCommand());
+        this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            final io.papermc.paper.command.brigadier.Commands commands = event.registrar();
+            new WandCommand().register(commands);
+        });
 
         new Metrics(this, 27729);
 
@@ -68,8 +72,12 @@ public class BuildersWand extends JavaPlugin {
         return recipeManager;
     }
 
-    public static boolean isSkyblockEnabled() {
+    public static boolean isSuperiorSkyblockEnabled() {
         return Bukkit.getPluginManager().isPluginEnabled("SuperiorSkyblock2");
+    }
+
+    public static boolean isBentoBoxEnabled() {
+        return Bukkit.getPluginManager().isPluginEnabled("BentoBox");
     }
 
     public static boolean isWorldGuardEnabled() {

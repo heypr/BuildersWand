@@ -1,8 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.listeners.WandListener;
+import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;

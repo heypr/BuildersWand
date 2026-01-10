@@ -2,9 +2,10 @@ package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
-import dev.heypr.buildersWand.Util;
 import dev.heypr.buildersWand.api.Wand;
+import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -42,10 +43,8 @@ public class ConfigManager {
         wandConfigs.clear();
         loadWandConfigs();
 
-        if (BuildersWand.getRecipeManager() != null) {
-            Util.debug("Registering new recipes based on loaded configs...");
-            BuildersWand.getRecipeManager().registerRecipes();
-        }
+        Util.debug("Registering new recipes based on loaded configs...");
+        BuildersWand.getRecipeManager().registerRecipes();
 
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
@@ -113,6 +112,17 @@ public class ConfigManager {
                 int durabilityAmount = config.getInt(path + "durability.amount", 100);
                 boolean durabilityEnabled = config.getBoolean(path + "durability.enabled", true);
                 String durabilityText = config.getString(path + "durability.text", "&3Durability: {durability}");
+
+                boolean breakSoundEnabled = config.getBoolean(path + "durability.breakSound.enabled", false);
+                String breakSoundName = config.getString(path + "durability.breakSound.sound", "ENTITY_ITEM_BREAK");
+                Sound breakSound = Sound.ENTITY_ITEM_BREAK;
+                try {
+                    breakSound = Sound.valueOf(breakSoundName);
+                }
+                catch (Exception e) {
+                    Util.debug("Invalid break sound for wand " + wandId + ": " + breakSound + ". Defaulting to ENTITY_ITEM_BREAK.");
+                }
+                String breakSoundMessage = config.getString(path + "durability.breakSound.message", "&cYour wand broke!");
 
                 String previewParticle = config.getString(path + "previewParticle.particle");
                 int previewParticleCount = config.getInt(path + "previewParticle.count", 1);
@@ -182,8 +192,8 @@ public class ConfigManager {
                 Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore,
                         wandType, staticLength, staticWidth, maxSize, maxSizeText,
                         maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount,
-                        durabilityEnabled, durabilityText, previewParticle,
-                        previewParticleCount, pOffsetX, pOffsetY, pOffsetZ,
+                        durabilityEnabled, durabilityText, breakSoundEnabled, breakSound, breakSoundMessage,
+                        previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ,
                         pSpeed, pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
                         isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize);
 

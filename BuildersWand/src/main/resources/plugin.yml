@@ -1,32 +1,35 @@
 name: BuildersWand
-version: '1.3.0'
+version: '1.4.0'
+description: Highly configurable, survival-friendly building wands » straw.hat on SpigotMC
+author: heypr
 main: dev.heypr.buildersWand.BuildersWand
 api-version: '1.21'
 prefix: BuildersWand
+load: POSTWORLD
 softdepend:
   - SuperiorSkyblock2
   - WorldGuard
   - Lands
-load: STARTUP
+  - BentoBox
 permissions:
-  builderswand.notify.update:
-    description: Allows receiving update notifications (Default config value).
+  builderswand.admin:
+    description: Master permission for BuildersWand
     default: op
-commands:
-  givewand:
-    description: Give yourself a Builders Wand
-    usage: /givewand <wand_id>
-    permission: builderswand.give
-    aliases:
-      - gw
-      - getwand
-      - bwgive
-      - bwg
-  reloadbuilderswand:
-    description: Reload the BuildersWand configuration
-    usage: /reloadbuilderswand
-    permission: builderswand.reload
-    aliases:
-      - rbw
-      - reloadbw
-      - reloadwands
+  builderswand.notify.update:
+    description: Notified when a new update is available
+    default: op
+  builderswand.give:
+    description: Allows giving wands
+    default: op
+  builderswand.reload:
+    description: Allows reloading config
+    default: op
+  builderswand.list:
+    description: Allows listing wands
+    default: op
+  builderswand.use.*:
+    description: Allows using all wands
+    default: op
+  builderswand.use:
+    description: Allows using specific wands
+    default: notop
