@@ -1,5 +1,4 @@
 # BuildersWand
-
 Introducing BuildersWand! A free, open-source solution that gives you, and your players, the power to build quickly without breaking a sweat.
 
 Relevant commands:
@@ -16,7 +15,7 @@ Relevant permissions:
 - `builderswand.list` » Allows the player to list all configured wands.
 - `builderswand.notify.update` » Allows the player to receive update notifications. This is a configurable permission node.
 
-An example configuration has been given below. If you have any questions, don't hesitate to contact me through my support Discord: https://discord.gg/Drgk3CxrtV
+## If you have any questions, feature requests, or issues, please contact me through my support Discord: https://discord.gg/j8xgCJQfGN
 
 For anyone wondering, this is (moreorless) a spiritual successor to the abandoned BuildersWand Premium resource: https://www.spigotmc.org/resources/abandoned-builders-wand-premium-building-util-api-configurable-1-8-1-20-4.105953/.
 
