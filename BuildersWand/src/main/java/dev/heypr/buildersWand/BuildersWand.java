@@ -36,10 +36,11 @@ public class BuildersWand extends JavaPlugin {
         recipeManager = new RecipeManager(this);
 
         saveDefaultConfig();
+
+        BuildersWand.getWandManager().registerWands();
         ConfigManager.load();
 
         BuildersWandAPI.setInstance(new ApiImplementation(this));
-        BuildersWand.getWandManager().registerWands();
 
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
 
