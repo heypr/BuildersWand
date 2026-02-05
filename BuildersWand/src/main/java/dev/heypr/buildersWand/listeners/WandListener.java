@@ -150,6 +150,9 @@ public class WandListener implements Listener {
             int available = getItemCount(player, session.lastTargetBlock.getType());
             if (available < needed) {
                 player.sendMessage(Util.toPrefixedComponent("&4You need " + (needed - available) + " more " + session.lastTargetBlock.getType().name() + " blocks."));
+                session.previewBlocks.clear();
+                session.lastTargetBlock = null;
+                session.lastTargetFace = null;
                 return;
             }
         }
@@ -350,6 +353,9 @@ public class WandListener implements Listener {
                 }
                 ItemStack wandItem = player.getInventory().getItemInMainHand();
                 if (!WandManager.isWand(wandItem)) {
+                    session.previewBlocks.clear();
+                    session.lastTargetBlock = null;
+                    session.lastTargetFace = null;
                     this.cancel();
                     session.particleTask = null;
                     return;
