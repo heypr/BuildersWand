@@ -136,10 +136,8 @@ public class WandManager {
         ItemMeta meta = item.getItemMeta();
         meta.getPersistentDataContainer().set(BuildersWand.PDC_KEY_DURABILITY, PersistentDataType.INTEGER, durability);
 
-        Component durabilityText = wand.getDurabilityText().replaceText(
-                TextReplacementConfig.builder().match("\\{durability\\}").replacement(String.valueOf(durability)).build());
-        Component sizeText = wand.getMaxSizeText().replaceText(
-                TextReplacementConfig.builder().match("\\{maxSize\\}").replacement(String.valueOf(maxSize)).build());
+        Component durabilityText = wand.getDurabilityText().replaceText(TextReplacementConfig.builder().match("{durability}").replacement(String.valueOf(durability)).build());
+        Component sizeText = wand.getMaxSizeText().replaceText(TextReplacementConfig.builder().match("{maxSize}").replacement(String.valueOf(maxSize)).build());
 
         List<Component> finalLore = new ArrayList<>();
         if (!infinite) {

@@ -240,13 +240,14 @@ public class WandListener implements Listener {
         ItemStack wandItem = player.getInventory().getItemInMainHand();
         if (!WandManager.isWand(wandItem)) return;
         Wand wand = WandManager.getWand(wandItem);
-        if (wand == null) {
-            Util.error("Wand configuration not found for item held by player " + player.getName());
-            Util.error("Wand internal name: " + WandManager.getWandID(wandItem));
+        if (ConfigManager.shouldDestroyInvalidWands()) {
             Util.error("Removing misconfigured wand from their inventory...");
             player.getInventory().removeItem(wandItem);
-            player.sendMessage(Util.toPrefixedComponent("&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."));
-            return;
+            player.sendMessage(Util.toPrefixedComponent(ConfigManager.getInvalidWandMessage()));
+
+        }
+        else {
+            Util.error("Misconfigured wand not removed due to configuration option.");
         }
 
         event.setCancelled(true);

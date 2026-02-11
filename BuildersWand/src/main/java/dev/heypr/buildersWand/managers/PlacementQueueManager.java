@@ -2,7 +2,6 @@ package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.listeners.WandListener;
-import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -42,12 +41,12 @@ public class PlacementQueueManager {
 
                 int remaining = blocksToPlace.size();
                 if (remaining > 0 && remaining < 50) {
-                    player.sendActionBar(Util.toPrefixedComponent("&7Placing blocks... &e" + remaining + " &7left"));
+                    MessageManager.sendMessage(player, MessageManager.Messages.PLACING_BLOCK, "remaining", String.valueOf(remaining));
                 }
 
                 if (blocksToPlace.isEmpty()) {
                     if (size > 50) {
-                        player.sendActionBar(Util.toPrefixedComponent("&aBlock placement complete!"));
+                        MessageManager.sendMessage(player, MessageManager.Messages.PLACEMENT_COMPLETE);
                     }
                     WandListener.getInstance().unlockPlayer(player);
                     this.cancel();

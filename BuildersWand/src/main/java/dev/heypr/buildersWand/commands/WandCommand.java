@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.MessageManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.utility.Util;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
@@ -29,7 +30,7 @@ public class WandCommand {
                 Commands.literal("builderswand")
                         .requires(stack -> stack.getSender().hasPermission("builderswand.admin"))
                         .executes(ctx -> {
-                            ctx.getSource().getSender().sendMessage(Util.toPrefixedComponent("&cUsage: /builderswand <reload|list|give>"));
+                            MessageManager.sendMessage(ctx.getSource().getSender(), MessageManager.Messages.COMMAND_USAGE);
                             return Command.SINGLE_SUCCESS;
                         })
 
@@ -45,7 +46,7 @@ public class WandCommand {
 
                         .then(Commands.literal("give")
                                 .requires(stack -> stack.getSender().hasPermission("builderswand.give"))
-                                .then(Commands.argument("wand id", StringArgumentType.word())
+                                .then(Commands.argument("id", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
                                             ConfigManager.getAllWands().forEach(w -> builder.suggest(w.getId()));
                                             return builder.buildFuture();
