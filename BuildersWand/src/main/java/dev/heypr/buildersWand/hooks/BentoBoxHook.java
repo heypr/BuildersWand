@@ -12,9 +12,6 @@ import java.util.Optional;
 public class BentoBoxHook {
     public static boolean canBuild(Player player, Location location) {
         Optional<Island> optionalIsland = BentoBox.getInstance().getIslandsManager().getIslandAt(location);
-
-        if (optionalIsland.isEmpty()) return false;
-
         return optionalIsland.map(island -> island.isAllowed(User.getInstance(player), Flags.PLACE_BLOCKS)).orElse(false);
     }
 }

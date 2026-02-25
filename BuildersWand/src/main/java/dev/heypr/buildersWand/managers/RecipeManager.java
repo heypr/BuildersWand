@@ -38,14 +38,14 @@ public class RecipeManager {
 
                 Util.debug("Registering crafting recipe for wand ID: " + wand.getId());
 
-                BuildersWand.getInstance().getServer().addRecipe(recipe, true);
+                plugin.getServer().addRecipe(recipe, true);
                 Util.debug("Successfully registered crafting recipe for wand ID: " + wand.getId());
             }
         }
     }
 
     public void unregisterRecipes() {
-        Iterator<Recipe> iterator = BuildersWand.getInstance().getServer().recipeIterator();
+        Iterator<Recipe> iterator = plugin.getServer().recipeIterator();
         while (iterator.hasNext()) {
             Recipe recipe = iterator.next();
             if (recipe instanceof ShapedRecipe shapedRecipe && shapedRecipe.getKey().getKey().startsWith("wand_recipe")) {

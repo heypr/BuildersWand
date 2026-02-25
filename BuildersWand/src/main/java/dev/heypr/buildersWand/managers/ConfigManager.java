@@ -131,9 +131,9 @@ public class ConfigManager {
                 double pOffsetZ = config.getDouble(path + "previewParticle.offset.z", 0);
                 double pSpeed = config.getDouble(path + "previewParticle.speed", 0);
 
-                int pRed = config.getInt(path + "previewParticle.options.red", 0);
-                int pGreen = config.getInt(path + "previewParticle.options.green", 0);
-                int pBlue = config.getInt(path + "previewParticle.options.blue", 0);
+                int pRed = config.getInt(path + "previewParticle.options.color.red", 0);
+                int pGreen = config.getInt(path + "previewParticle.options.color.green", 0);
+                int pBlue = config.getInt(path + "previewParticle.options.color.blue", 0);
                 int pSize = config.getInt(path + "previewParticle.options.size", 1);
 
                 float cooldown = (float) config.getDouble(path + "cooldown", 0);

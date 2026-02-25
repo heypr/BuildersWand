@@ -35,8 +35,6 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
         recipeManager = new RecipeManager(this);
 
-        saveDefaultConfig();
-
         BuildersWand.getWandManager().registerWands();
         ConfigManager.load();
 

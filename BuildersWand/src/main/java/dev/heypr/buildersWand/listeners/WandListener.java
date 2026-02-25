@@ -102,8 +102,6 @@ public class WandListener implements Listener {
         if (!WandManager.isWand(wandItem)) return;
         Wand wand = WandManager.getWand(wandItem);
         if (wand == null) {
-            Util.error("Wand configuration not found for item held by player " + player.getName());
-            Util.error("Wand internal name: " + WandManager.getWandID(wandItem));
             if (ConfigManager.shouldDestroyInvalidWands()) {
                 Util.error("Removing misconfigured wand from their inventory...");
                 player.getInventory().removeItem(wandItem);
@@ -159,7 +157,15 @@ public class WandListener implements Listener {
 
         session.lastRightClickTime = now;
 
-        BlockPlaceEvent bpe = new BlockPlaceEvent(session.lastTargetBlock, session.lastTargetBlock.getState(), session.lastTargetBlock, new ItemStack(session.lastTargetBlock.getType()), player, true, EquipmentSlot.HAND);
+        BlockPlaceEvent bpe = new BlockPlaceEvent(
+                session.lastTargetBlock,
+                session.lastTargetBlock.getState(),
+                session.lastTargetBlock,
+                new ItemStack(session.lastTargetBlock.getType()),
+                player,
+                true,
+                EquipmentSlot.HAND
+        );
         Bukkit.getServer().getPluginManager().callEvent(bpe);
 
         if (bpe.isCancelled()) {
@@ -390,7 +396,7 @@ public class WandListener implements Listener {
         getSession(player).placing = false;
     }
 
-    public int getItemCount(Player player, Material material) {
+    private int getItemCount(Player player, Material material) {
         int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item != null && item.getType() == material) count += item.getAmount();
@@ -398,7 +404,7 @@ public class WandListener implements Listener {
         return count;
     }
 
-    public void removeItems(Player player, Material material, int amount) {
+    private void removeItems(Player player, Material material, int amount) {
         int remaining = amount;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item == null || item.getType() != material) continue;

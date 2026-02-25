@@ -49,8 +49,7 @@ public class MessageManager {
     }
 
     public static void sendActionBar(Player player, Messages message, String replacementVar, String replacementMsg) {
-        String regex = "{" + replacementVar + "}";
-        String finalMessage = message.value.replaceAll(regex, replacementMsg);
+        String finalMessage = applyReplacement(message, replacementVar, replacementMsg);
         player.sendActionBar(Util.toPrefixedComponent(finalMessage));
     }
 
@@ -59,8 +58,7 @@ public class MessageManager {
     }
 
     public static void sendMessage(Player player, Messages message, String replacementVar, String replacementMsg) {
-        String regex = "{" + replacementVar + "}";
-        String finalMessage = message.value.replaceAll(regex, replacementMsg);
+        String finalMessage = applyReplacement(message, replacementVar, replacementMsg);
         player.sendMessage(Util.toPrefixedComponent(finalMessage));
     }
 
@@ -69,8 +67,7 @@ public class MessageManager {
     }
 
     public static void sendMessage(CommandSender sender, Messages message, String replacementVar, String replacementMsg) {
-        String regex = "{" + replacementVar + "}";
-        String finalMessage = message.value.replaceAll(regex, replacementMsg);
+        String finalMessage = applyReplacement(message, replacementVar, replacementMsg);
         sender.sendMessage(Util.toPrefixedComponent(finalMessage));
     }
 
@@ -104,5 +101,9 @@ public class MessageManager {
             return;
         }
         sendMessage(player, message, replacementVar, replacementMsg);
+    }
+
+    private static String applyReplacement(Messages message, String replacementVar, String replacementMsg) {
+        return message.value.replace("{" + replacementVar + "}", replacementMsg);
     }
 }

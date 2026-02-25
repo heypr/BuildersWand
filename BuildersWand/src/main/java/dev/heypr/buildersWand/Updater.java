@@ -19,7 +19,6 @@ public class Updater {
 
     public static void start(BuildersWand plugin) {
         if (!ConfigManager.isUpdaterEnabled()) {
-            Util.debug("Updater disabled in config.");
             return;
         }
 
@@ -50,12 +49,10 @@ public class Updater {
         try {
             String latest = fetchSpigotLatestVersion();
             if (latest == null || latest.isEmpty()) {
-                Util.debug("Unable to fetch latest version (empty).");
                 return;
             }
 
             String current = plugin.getDescription().getVersion();
-            Util.debug("Updater: current=" + current + " latest=" + latest);
 
             if (isNewerVersion(current, latest)) {
                 Bukkit.getScheduler().runTask(plugin, () -> notifyUpdateAvailable(plugin, current, latest));
@@ -84,7 +81,6 @@ public class Updater {
 
             int code = con.getResponseCode();
             if (code != 200) {
-                Util.debug("Updater HTTP returned " + code + " for resource " + RESOURCE_ID);
                 return null;
             }
 
@@ -93,7 +89,6 @@ public class Updater {
             return line != null ? line.trim() : null;
         }
         catch (Exception e) {
-            Util.debug("Updater fetch error: " + e.getMessage());
             return null;
         }
         finally {
@@ -129,7 +124,6 @@ public class Updater {
         if (ingame) {
             String notifyMessage = ConfigManager.getUpdaterNotifyMessage();
             String permission = ConfigManager.getUpdaterNotifyPermission();
-
             for (Player player : plugin.getServer().getOnlinePlayers()) {
                 if (permission.isEmpty() || player.hasPermission(permission)) {
                     player.sendMessage(Util.toPrefixedComponent(notifyMessage));
