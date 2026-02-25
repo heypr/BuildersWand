@@ -127,6 +127,10 @@ public class Wand {
         return id;
     }
 
+    public String getRawName() {
+        return name;
+    }
+
     public TextComponent getName() {
         return Util.toComponent(name);
     }

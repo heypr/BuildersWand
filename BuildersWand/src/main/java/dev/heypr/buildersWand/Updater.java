@@ -1,6 +1,7 @@
 package dev.heypr.buildersWand;
 
-import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.io.ConfigManager;
+import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -63,7 +64,7 @@ public class Updater {
         }
         catch (Exception e) {
             Util.error("Updater error: " + e.getMessage());
-            plugin.getLogger().fine("Updater exception: " + e);
+            Util.log("Updater exception: " + e);
         }
     }
 
@@ -119,14 +120,15 @@ public class Updater {
         boolean ingame = ConfigManager.notifyUpdateInGame();
 
         String consoleText = String.format("&aUpdate available! &c%s -> &a%s (https://www.spigotmc.org/resources/builderswand.125977)", current, latest);
-        if (console) Util.log(consoleText);
+        if (console) {
+            Util.log(consoleText);
+        }
 
         if (ingame) {
-            String notifyMessage = ConfigManager.getUpdaterNotifyMessage();
-            String permission = ConfigManager.getUpdaterNotifyPermission();
+            String permission = "builderswand.update.notify";
             for (Player player : plugin.getServer().getOnlinePlayers()) {
-                if (permission.isEmpty() || player.hasPermission(permission)) {
-                    player.sendMessage(Util.toPrefixedComponent(notifyMessage));
+                if (player.hasPermission(permission)) {
+                    MessageManager.sendMessage(player, MessageManager.Messages.UPDATE_AVAILABLE, "current", current, "latest", latest);
                 }
             }
         }

@@ -1,0 +1,38 @@
+# BuildersWand Messages Configuration
+# All messages sent to players by BuildersWand are defined here.
+# You can customize any message by editing the values below.
+# Supports color codes (&c, &a, etc.) and MiniMessage formatting
+
+command:
+  usage: "&cUsage: /builderswand <reload|list|give>"
+  reload:
+    success: "&aConfiguration has been reloaded."
+  no-wands: "&cNo wands found."
+  wand-not-found: "&cNo wand found with ID: {id}"
+  wand-received: "&aYou received a {id} wand!"
+  wand-given: "&aGave {id} to {player_name}"
+  only-players: "&cOnly players can give wands to themselves."
+  wand-list: "&eWands:"
+
+wand:
+  # Placement messages
+  placing-blocks: "&7Placing blocks... &e{remaining} &7left"
+  placement-complete: "&aBlock placement complete!"
+
+  # Error/Warning messages
+  misconfigured: "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."
+  no-permission: "&4You do not have permission to use this wand."
+  still-placing: "&4Wand is still placing blocks, please wait..."
+  cooldown-active: "&4Please wait &c{seconds} &4seconds before using the wand again."
+  insufficient-blocks: "&4You need &c{needed} &4more &c{material} &4blocks."
+  placement-disallowed: "&4Disallowed."
+  nothing-to-undo: "&cNothing to undo!"
+  action-undone: "&aAction undone! &c{remaining} &aundoes remaining."
+
+# Updater Message
+updater:
+  available: "&aAn update for BuildersWand is available! Check console for more info."
+
+# DO NOT EDIT THIS LINE!!!
+# IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
+config-version: 1.5.0

@@ -9,6 +9,8 @@ import dev.heypr.buildersWand.hooks.LandsHook;
 import dev.heypr.buildersWand.hooks.SuperiorSkyblockHook;
 import dev.heypr.buildersWand.hooks.WorldGuardHook;
 import dev.heypr.buildersWand.managers.*;
+import dev.heypr.buildersWand.managers.io.ConfigManager;
+import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.utility.Util;
 import org.bukkit.*;
 import org.bukkit.block.Block;
@@ -105,7 +107,7 @@ public class WandListener implements Listener {
             if (ConfigManager.shouldDestroyInvalidWands()) {
                 Util.error("Removing misconfigured wand from their inventory...");
                 player.getInventory().removeItem(wandItem);
-                player.sendMessage(Util.toPrefixedComponent(ConfigManager.getInvalidWandMessage()));
+                MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
             }
             else {
                 Util.error("Misconfigured wand not removed due to configuration option.");
@@ -118,14 +120,14 @@ public class WandListener implements Listener {
         event.setCancelled(true);
 
         if (!player.hasPermission("builderswand.use." + wand.getId()) && !player.hasPermission("builderswand.use.*")) {
-            player.sendActionBar(Util.toPrefixedComponent("&4You do not have permission to use this wand."));
+            MessageManager.sendMessage(player, MessageManager.Messages.NO_PERMISSION, "wand_id", wand.getId());
             return;
         }
 
         WandSession session = getSession(player);
 
         if (session.placing) {
-            player.sendActionBar(Util.toPrefixedComponent("&4Wand is still placing blocks, please wait..."));
+            MessageManager.sendActionBar(player, MessageManager.Messages.STILL_PLACING);
             return;
         }
 
@@ -139,7 +141,7 @@ public class WandListener implements Listener {
         float cooldown = wand.getCooldown() * 1000L;
 
         if (now - last < cooldown) {
-            player.sendActionBar(Util.toPrefixedComponent("&4Please wait " + (int) ((cooldown - (now - last)) / 1000) + " seconds before using the wand again."));
+            MessageManager.sendActionBar(player, MessageManager.Messages.COOLDOWN_ACTIVE, "seconds", String.valueOf((int) ((cooldown - (now - last)) / 1000)));
             return;
         }
 
@@ -147,7 +149,7 @@ public class WandListener implements Listener {
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
             int available = getItemCount(player, session.lastTargetBlock.getType());
             if (available < needed) {
-                player.sendMessage(Util.toPrefixedComponent("&4You need " + (needed - available) + " more " + session.lastTargetBlock.getType().name() + " blocks."));
+                MessageManager.sendMessage(player, MessageManager.Messages.INSUFFICIENT_BLOCKS, "needed", needed - available, "material", session.lastTargetBlock.getType().name());
                 session.previewBlocks.clear();
                 session.lastTargetBlock = null;
                 session.lastTargetFace = null;
@@ -169,7 +171,7 @@ public class WandListener implements Listener {
         Bukkit.getServer().getPluginManager().callEvent(bpe);
 
         if (bpe.isCancelled()) {
-            player.sendActionBar(Util.toPrefixedComponent("&4Disallowed."));
+            MessageManager.sendMessage(player, MessageManager.Messages.PLACEMENT_DISALLOWED);
             return;
         }
 
@@ -244,23 +246,23 @@ public class WandListener implements Listener {
         if (!player.isSneaking()) return;
 
         ItemStack wandItem = player.getInventory().getItemInMainHand();
-        if (!WandManager.isWand(wandItem)) return;
+        if (!WandManager.isWand(wandItem)) {
+            if (ConfigManager.shouldDestroyInvalidWands()) {
+                Util.error("Removing misconfigured wand from their inventory...");
+                player.getInventory().removeItem(wandItem);
+                MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
+            }
+            else {
+                Util.error("Misconfigured wand not removed due to configuration option.");
+            }
+        }
+
         Wand wand = WandManager.getWand(wandItem);
-        if (ConfigManager.shouldDestroyInvalidWands()) {
-            Util.error("Removing misconfigured wand from their inventory...");
-            player.getInventory().removeItem(wandItem);
-            player.sendMessage(Util.toPrefixedComponent(ConfigManager.getInvalidWandMessage()));
-
-        }
-        else {
-            Util.error("Misconfigured wand not removed due to configuration option.");
-        }
-
         event.setCancelled(true);
 
         WandSession session = getSession(player);
         if (session.undoHistory.isEmpty()) {
-            player.sendActionBar(Util.toPrefixedComponent("&cNothing to undo!"));
+            MessageManager.sendActionBar(player, MessageManager.Messages.NOTHING_TO_UNDO);
             return;
         }
 
@@ -269,16 +271,17 @@ public class WandListener implements Listener {
 
         for (BlockState oldState : lastAction) {
             Block currentBlock = oldState.getBlock();
-
             if (wand.consumesItems() && !currentBlock.getType().isAir()) {
                 itemsToReturn.add(new ItemStack(currentBlock.getType()));
             }
             oldState.update(true, false);
         }
 
-        if (!itemsToReturn.isEmpty() && !player.getGameMode().isInvulnerable()) player.give(itemsToReturn.toArray(new ItemStack[0]));
+        if (!itemsToReturn.isEmpty() && !player.getGameMode().isInvulnerable()) {
+            player.give(itemsToReturn.toArray(new ItemStack[0]));
+        }
 
-        player.sendActionBar(Util.toPrefixedComponent("&aAction undone! " + session.undoHistory.size() + " undoes remaining."));
+        MessageManager.sendActionBar(player, MessageManager.Messages.ACTION_UNDONE, "remaining", session.undoHistory.size());
     }
 
     public void generatePreview(Player player, Wand wand) {

@@ -14,7 +14,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.util.*;
 
-import static dev.heypr.buildersWand.managers.ConfigManager.loadWandConfigs;
+import static dev.heypr.buildersWand.managers.io.ConfigManager.loadWandConfigs;
 
 public class WandManager {
 
