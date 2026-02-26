@@ -11,11 +11,12 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import java.util.Objects;
 
 public class Util {
-
     public static TextComponent PREFIX;
 
     public static TextComponent toComponent(String string) {
-        if (string == null) return Component.empty();
+        if (string == null) {
+            return Component.empty();
+        }
         LegacyComponentSerializer legacy = LegacyComponentSerializer.legacyAmpersand();
         return legacy.deserialize(legacy.serialize(MiniMessage.miniMessage().deserialize(string).asComponent())).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE);
     }
@@ -25,7 +26,9 @@ public class Util {
     }
 
     public static void debug(String string) {
-        if (!ConfigManager.getDebugMode()) return;
+        if (!ConfigManager.getDebugMode()) {
+            return;
+        }
         BuildersWand.getInstance().getComponentLogger().info(Util.toComponent("[DEBUG] " + string));
     }
 

@@ -24,7 +24,6 @@ import java.util.concurrent.CompletableFuture;
 
 @SuppressWarnings("UnstableApiUsage")
 public class GiveCommand implements Subcommand {
-
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("give")
@@ -49,7 +48,6 @@ public class GiveCommand implements Subcommand {
             MessageManager.sendMessage(source.getSender(), MessageManager.Messages.ONLY_PLAYERS);
             return Command.SINGLE_SUCCESS;
         }
-
         String wandId = StringArgumentType.getString(ctx, "id");
         return giveWand(source, player, wandId);
     }
@@ -64,11 +62,9 @@ public class GiveCommand implements Subcommand {
         catch (CommandSyntaxException e) {
             return Command.SINGLE_SUCCESS;
         }
-
         if (players.isEmpty()) {
             return Command.SINGLE_SUCCESS;
         }
-
         for (Player player : players) {
             giveWand(source, player, wandId);
         }
@@ -81,10 +77,8 @@ public class GiveCommand implements Subcommand {
             MessageManager.sendMessage(target, MessageManager.Messages.WAND_NOT_FOUND, "wand_id", wandId);
             return Command.SINGLE_SUCCESS;
         }
-
         ItemStack item = WandManager.createWandItem(wand);
         target.getInventory().addItem(item);
-
         MessageManager.sendMessage(target, MessageManager.Messages.WAND_RECEIVED, wand);
         if (target != source.getSender()) {
             MessageManager.sendMessage(target, MessageManager.Messages.WAND_GIVEN, wand);

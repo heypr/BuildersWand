@@ -20,7 +20,6 @@ import java.util.Collection;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ListCommand implements Subcommand {
-
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("list")
@@ -31,26 +30,21 @@ public class ListCommand implements Subcommand {
     private int execute(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
         Collection<Wand> wands = ConfigManager.getAllWands();
-
         if (wands.isEmpty()) {
             MessageManager.sendMessage(source.getSender(), MessageManager.Messages.NO_WANDS);
             return Command.SINGLE_SUCCESS;
         }
-
         TextComponent.Builder msg = MessageManager.getPrefixedMessage(MessageManager.Messages.LIST_WANDS).toBuilder();
         int i = 0;
-
         for (Wand wand : wands) {
             msg.append(Component.text(wand.getId())
                     .color(NamedTextColor.YELLOW)
                     .hoverEvent(HoverEvent.showText(Util.toPrefixedComponent("&e/bw give " + wand.getName())))
                     .clickEvent(ClickEvent.runCommand("/bw give " + wand.getId())));
-
             if (++i < wands.size()) {
                 msg.append(Component.text(", ").color(NamedTextColor.GRAY));
             }
         }
-
         source.getSender().sendMessage(msg.build());
         return Command.SINGLE_SUCCESS;
     }

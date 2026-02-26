@@ -14,7 +14,6 @@ import java.util.List;
 
 @SuppressWarnings("UnstableApiUsage")
 public class BuildersWandCommand {
-
     private final List<Subcommand> subcommands = List.of(
             new ReloadCommand(),
             new ListCommand(),

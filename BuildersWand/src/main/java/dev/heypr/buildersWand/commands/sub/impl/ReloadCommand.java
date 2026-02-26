@@ -11,13 +11,13 @@ import io.papermc.paper.command.brigadier.Commands;
 
 @SuppressWarnings("UnstableApiUsage")
 public class ReloadCommand implements Subcommand {
-
     @Override
     public LiteralArgumentBuilder<CommandSourceStack> build() {
         return Commands.literal("reload")
                 .requires(stack -> stack.getSender().hasPermission("builderswand.reload"))
                 .executes(this::execute);
     }
+
     private int execute(CommandContext<CommandSourceStack> ctx) {
         ConfigManager.reload();
         MessageManager.reload();

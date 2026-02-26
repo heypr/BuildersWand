@@ -17,10 +17,8 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuildersWand extends JavaPlugin {
-
     private static final WandManager wandManager = new WandManager();
     private static RecipeManager recipeManager;
-
     private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
@@ -36,22 +34,16 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_UUID = new NamespacedKey(this, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
         recipeManager = new RecipeManager(this);
-
         BuildersWand.getWandManager().registerWands();
         ConfigManager.load();
         MessageManager.initialize();
-
         BuildersWandAPI.setInstance(new ApiImplementation(this));
-
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
-
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
             new BuildersWandCommand().register(commands);
         });
-
         new Metrics(this, 27729);
-
         Updater.start(this);
         Util.log("BuildersWand enabled!");
     }

@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 import java.io.File;
 
 public class MessageManager {
-
     private static final String CURRENT_VERSION = "1.5.0";
     private static FileConfiguration messages;
     private static File messagesFile;
@@ -26,19 +25,15 @@ public class MessageManager {
         try {
             BuildersWand plugin = BuildersWand.getInstance();
             messagesFile = new File(plugin.getDataFolder(), "messages.yml");
-
             if (!messagesFile.exists()) {
                 plugin.saveResource("messages.yml", false);
             }
-
             loadMessagesFromFile();
-
             String fileVersion = messages.getString("config-version", "unknown");
             if (!fileVersion.equals(CURRENT_VERSION)) {
                 Util.error("OUTDATED messages.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
                 Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub.");
             }
-
             Util.log("MessageManager initialized successfully!");
         }
         catch (Exception e) {
@@ -50,13 +45,11 @@ public class MessageManager {
         if (messagesFile == null || !messagesFile.exists()) {
             throw new RuntimeException("messages.yml file not found at: " + messagesFile);
         }
-
         String fileVersion = messages.getString("config-version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
             Util.error("OUTDATED messages.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
             Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
         }
-
         messages = YamlConfiguration.loadConfiguration(messagesFile);
         Util.debug("Messages YAML loaded from disk");
     }
@@ -80,10 +73,8 @@ public class MessageManager {
         WAND_GIVEN("command.wand-given"),
         ONLY_PLAYERS("command.only-players"),
         LIST_WANDS("command.wand-list"),
-
         PLACING_BLOCKS("wand.placing-blocks"),
         PLACEMENT_COMPLETE("wand.placement-complete"),
-
         MISCONFIGURED("wand.misconfigured"),
         NO_PERMISSION("wand.no-permission"),
         STILL_PLACING("wand.still-placing"),
@@ -92,7 +83,6 @@ public class MessageManager {
         PLACEMENT_DISALLOWED("wand.placement-disallowed"),
         NOTHING_TO_UNDO("wand.nothing-to-undo"),
         ACTION_UNDONE("wand.action-undone"),
-
         UPDATE_AVAILABLE("updater.available");
 
         private final String key;
@@ -111,8 +101,9 @@ public class MessageManager {
     }
 
     private static String getWandValue(Wand wand, String value) {
-        if (wand == null) return "";
-
+        if (wand == null) {
+            return "";
+        }
         return switch (value.toLowerCase()) {
             case "id" -> wand.getId();
             case "name" -> wand.getRawName();
@@ -130,11 +121,10 @@ public class MessageManager {
 
     public static String getWandMessage(Messages message, Wand wand) {
         String msg = getMessage(message);
-        if (wand == null) return msg;
-
-        String[] keys = {"id", "name", "material", "durability", "wandtype",
-                "staticlength", "staticwidth", "maxsize", "cooldown", "undohistorysize"};
-
+        if (wand == null) {
+            return msg;
+        }
+        String[] keys = {"id", "name", "material", "durability", "wandtype", "staticlength", "staticwidth", "maxsize", "cooldown", "undohistorysize"};
         for (String key : keys) {
             String placeholder = "{" + key + "}";
             if (msg.contains(placeholder)) {
@@ -149,13 +139,11 @@ public class MessageManager {
             Util.error("MessageManager not initialized!");
             return "&c[Missing: " + message.getKey() + "]";
         }
-
         String msg = messages.getString(message.getKey());
         if (msg == null) {
             Util.debug("Message key not found: " + message.getKey());
             return "&c[Missing: " + message.getKey() + "]";
         }
-
         return msg;
     }
 
@@ -171,68 +159,88 @@ public class MessageManager {
             Util.error("Invalid placeholder count for: " + message.getKey());
             return msg;
         }
-
         for (int i = 0; i < placeholders.length; i += 2) {
             String key = placeholders[i].toString();
             String value = placeholders[i + 1].toString();
             msg = msg.replace("{" + key + "}", value);
         }
-
         return msg;
     }
 
     public static void sendActionBar(Player player, Messages message) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendActionBar(Util.toPrefixedComponent(getMessage(message)));
     }
 
     public static void sendActionBar(Player player, Messages message, String key, String value) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendActionBar(Util.toPrefixedComponent(getMessage(message, key, value)));
     }
 
     public static void sendActionBar(Player player, Messages message, Object... placeholders) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendActionBar(Util.toPrefixedComponent(getMessage(message, placeholders)));
     }
 
     public static void sendMessage(Player player, Messages message) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendMessage(Util.toPrefixedComponent(getMessage(message)));
     }
 
     public static void sendMessage(Player player, Messages message, String key, String value) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendMessage(Util.toPrefixedComponent(getMessage(message, key, value)));
     }
 
     public static void sendMessage(Player player, Messages message, Object... placeholders) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendMessage(Util.toPrefixedComponent(getMessage(message, placeholders)));
     }
 
     public static void sendMessage(CommandSender sender, Messages message) {
-        if (sender == null) return;
+        if (sender == null) {
+            return;
+        }
         sender.sendMessage(Util.toPrefixedComponent(getMessage(message)));
     }
 
     public static void sendMessage(CommandSender sender, Messages message, String key, String value) {
-        if (sender == null) return;
+        if (sender == null) {
+            return;
+        }
         sender.sendMessage(Util.toPrefixedComponent(getMessage(message, key, value)));
     }
 
     public static void sendMessage(CommandSender sender, Messages message, Object... placeholders) {
-        if (sender == null) return;
+        if (sender == null) {
+            return;
+        }
         sender.sendMessage(Util.toPrefixedComponent(getMessage(message, placeholders)));
     }
 
     public static void sendMessage(CommandSender sender, Messages message, Wand wand) {
-        if (sender == null) return;
+        if (sender == null) {
+            return;
+        }
         sender.sendMessage(Util.toPrefixedComponent(getWandMessage(message, wand)));
     }
 
     public static void sendMessage(Player player, Messages message, Wand wand) {
-        if (player == null) return;
+        if (player == null) {
+            return;
+        }
         player.sendMessage(Util.toPrefixedComponent(getWandMessage(message, wand)));
     }
 

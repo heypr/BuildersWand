@@ -12,7 +12,6 @@ import org.bukkit.inventory.ItemStack;
 import java.util.Collection;
 
 public class ApiImplementation extends BuildersWandAPI {
-
     private final BuildersWand plugin;
 
     public ApiImplementation(BuildersWand plugin) {

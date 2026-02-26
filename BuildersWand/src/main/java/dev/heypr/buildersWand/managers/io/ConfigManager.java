@@ -31,23 +31,18 @@ public class ConfigManager {
     public static void load() {
         BuildersWand plugin = BuildersWand.getInstance();
         plugin.saveDefaultConfig();
-
         String fileVersion = plugin.getConfig().getString("config-version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
             Util.error("OUTDATED config.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
             Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
         }
-
         Util.debug("Starting ConfigManager load sequence...");
-
         if (BuildersWand.getRecipeManager() != null) {
             BuildersWand.getRecipeManager().unregisterRecipes();
         }
-
         wandConfigs.clear();
         loadWandConfigs();
         BuildersWand.getRecipeManager().registerRecipes();
-
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
         fireWandBlockPlaceEvent = config.getBoolean("fireWandBlockPlaceEvent", true);
@@ -59,7 +54,6 @@ public class ConfigManager {
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-
         String prefix = config.getString("prefix", "&7[&bBuildersWand&7] &r");
         Util.PREFIX = Util.toComponent(prefix);
     }
@@ -69,12 +63,10 @@ public class ConfigManager {
         List<Wand> wandList = new ArrayList<>();
         FileConfiguration config = BuildersWand.getInstance().getConfig();
         ConfigurationSection wandsSection = config.getConfigurationSection("wands");
-
         if (wandsSection == null) {
             Util.debug("Critical: 'wands' section is missing from config.yml!");
             return wandList;
         }
-
         for (String wandId : wandsSection.getKeys(false)) {
             try {
                 String path = "wands." + wandId + ".";
@@ -94,7 +86,6 @@ public class ConfigManager {
                 String durabilityText = config.getString(path + "durability.text", "&3Durability: {durability}");
                 boolean breakSoundEnabled = config.getBoolean(path + "durability.breakSound.enabled", false);
                 String breakSoundName = config.getString(path + "durability.breakSound.sound", "ENTITY_ITEM_BREAK");
-
                 Sound breakSound;
                 try {
                     breakSound = Sound.valueOf(breakSoundName);
@@ -103,7 +94,6 @@ public class ConfigManager {
                     Util.debug("Invalid break sound for wand '" + wandId + "': " + breakSoundName + ". Defaulting to ENTITY_ITEM_BREAK.");
                     breakSound = Sound.ENTITY_ITEM_BREAK;
                 }
-
                 String breakSoundMessage = config.getString(path + "durability.breakSound.message", "&cYour wand broke!");
                 String previewParticle = config.getString(path + "previewParticle.particle");
                 int previewParticleCount = config.getInt(path + "previewParticle.count", 1);
@@ -117,7 +107,6 @@ public class ConfigManager {
                 int pSize = config.getInt(path + "previewParticle.options.size", 1);
                 float cooldown = (float) config.getDouble(path + "cooldown", 0);
                 int undoHistorySize = config.getInt(path + "undoHistorySize", 10);
-
                 List<Material> blockedMaterials = new ArrayList<>();
                 for (String mat : config.getStringList(path + "blockedMaterials")) {
                     try {
@@ -125,12 +114,10 @@ public class ConfigManager {
                     }
                     catch (Exception ignored) {}
                 }
-
                 boolean isCraftable = config.getBoolean(path + "craftable", false);
                 boolean craftingRecipeEnabled = config.getBoolean(path + "craftingRecipe.enabled", false);
                 List<String> recipeShape = config.getStringList(path + "craftingRecipe.shape");
                 Map<Character, Material> recipeIngredients = new HashMap<>();
-
                 if (craftingRecipeEnabled && !recipeShape.isEmpty()) {
                     ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
                     if (ingredientsSection != null) {
@@ -142,13 +129,11 @@ public class ConfigManager {
                         }
                     }
                 }
-
                 Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, wandType, staticLength, staticWidth, maxSize, maxSizeText,
                         maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount, durabilityEnabled, durabilityText,
                         breakSoundEnabled, breakSound, breakSoundMessage, previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ,
                         pSpeed, pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials, isCraftable, craftingRecipeEnabled, recipeShape,
                         recipeIngredients, undoHistorySize);
-
                 wandConfigs.put(wandId, wand);
                 wandList.add(wand);
             }

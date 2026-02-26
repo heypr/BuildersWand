@@ -7,7 +7,6 @@ import org.bukkit.block.BlockFace;
 import java.util.*;
 
 public class BlockFinder {
-
     public static final Set<Material> REPLACEABLE = EnumSet.of(
             Material.AIR,
             Material.CAVE_AIR,
@@ -42,30 +41,25 @@ public class BlockFinder {
         if (face == null || maxSize <= 0) {
             return result;
         }
-
         Material targetMaterial = startBlock.getType();
         if (blockedMaterials.contains(targetMaterial)) {
             return result;
         }
-
         BlockFace[] searchDirections = getPlaneDirections(face);
-
         Queue<Block> queue = new ArrayDeque<>();
         Set<Block> visited = new HashSet<>();
-
         queue.add(startBlock);
         visited.add(startBlock);
-
         while (!queue.isEmpty() && result.size() < maxSize) {
             Block current = queue.poll();
-
-            if (current.getType() != targetMaterial) continue;
-
+            if (current.getType() != targetMaterial) {
+                continue;
+            }
             Block targetPlaceLocation = current.getRelative(face);
-            if (!isReplaceable(targetPlaceLocation)) continue;
-
+            if (!isReplaceable(targetPlaceLocation)) {
+                continue;
+            }
             result.add(current);
-
             for (BlockFace neighborFace : searchDirections) {
                 Block neighbor = current.getRelative(neighborFace);
                 if (visited.add(neighbor)) {
@@ -80,34 +74,45 @@ public class BlockFinder {
 
     public static List<Block> getStaticBlocks(Block startBlock, BlockFace face, int length, int width) {
         List<Block> result = new ArrayList<>();
-        if (startBlock == null || face == null) return result;
-
+        if (startBlock == null || face == null) {
+            return result;
+        }
         Material targetMaterial = startBlock.getType();
         BlockFace[] directions = getPlaneDirections(face);
-
         if (directions.length < 4) {
             return result;
         }
-
         int lRadius = length / 2;
         int wRadius = width / 2;
-
         for (int l = -lRadius; l <= (length % 2 == 0 ? lRadius - 1 : lRadius); l++) {
             for (int w = -wRadius; w <= (width % 2 == 0 ? wRadius - 1 : wRadius); w++) {
                 Block current = startBlock;
-
-                if (l > 0) for (int i = 0; i < l; i++) current = current.getRelative(directions[0]);
-                else if (l < 0) for (int i = 0; i < Math.abs(l); i++) current = current.getRelative(directions[1]);
-
-                if (w > 0) for (int i = 0; i < w; i++) current = current.getRelative(directions[2]);
-                else if (w < 0) for (int i = 0; i < Math.abs(w); i++) current = current.getRelative(directions[3]);
-
+                if (l > 0) {
+                    for (int i = 0; i < l; i++) {
+                        current = current.getRelative(directions[0]);
+                    }
+                }
+                else if (l < 0) {
+                    for (int i = 0; i < Math.abs(l); i++) {
+                        current = current.getRelative(directions[1]);
+                    }
+                }
+                if (w > 0) {
+                    for (int i = 0; i < w; i++) {
+                        current = current.getRelative(directions[2]);
+                    }
+                }
+                else if (w < 0) {
+                    for (int i = 0; i < Math.abs(w); i++) {
+                        current = current.getRelative(directions[3]);
+                    }
+                }
                 if (current.getType() != targetMaterial) {
                     continue;
                 }
-
-                if (!current.getBlockData().matches(startBlock.getBlockData())) continue;
-
+                if (!current.getBlockData().matches(startBlock.getBlockData())) {
+                    continue;
+                }
                 Block targetPlaceLocation = current.getRelative(face);
                 if (isReplaceable(targetPlaceLocation)) {
                     result.add(current);
