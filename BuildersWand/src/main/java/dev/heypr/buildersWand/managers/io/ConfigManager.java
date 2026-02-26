@@ -118,22 +118,45 @@ public class ConfigManager {
                 boolean craftingRecipeEnabled = config.getBoolean(path + "craftingRecipe.enabled", false);
                 List<String> recipeShape = config.getStringList(path + "craftingRecipe.shape");
                 Map<Character, Material> recipeIngredients = new HashMap<>();
-                if (craftingRecipeEnabled && !recipeShape.isEmpty()) {
-                    ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
-                    if (ingredientsSection != null) {
-                        for (String key : ingredientsSection.getKeys(false)) {
-                            try {
-                                recipeIngredients.put(key.charAt(0), Material.valueOf(ingredientsSection.getString(key).toUpperCase()));
+                if (craftingRecipeEnabled) {
+                    Util.debug("Loading recipe for wand " + wandId + "...");
+                    recipeShape = config.getStringList(path + "craftingRecipe.shape");
+                    if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
+                        Util.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
+                        craftingRecipeEnabled = false;
+                    }
+                    else {
+                        ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
+                        if (ingredientsSection == null) {
+                            Util.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
+                            craftingRecipeEnabled = false;
+                        }
+                        else {
+                            for (String key : ingredientsSection.getKeys(false)) {
+                                char ingredientChar = key.charAt(0);
+                                String materialName = ingredientsSection.getString(key);
+                                try {
+                                    if (materialName != null) {
+                                        Material mat = Material.valueOf(materialName.toUpperCase());
+                                        recipeIngredients.put(ingredientChar, mat);
+                                        Util.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
+                                    }
+                                }
+                                catch (IllegalArgumentException e) {
+                                    Util.error("Wand " + wandId + " invalid ingredient: " + materialName);
+                                    craftingRecipeEnabled = false;
+                                    break;
+                                }
                             }
-                            catch (Exception ignored) {}
                         }
                     }
                 }
-                Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, wandType, staticLength, staticWidth, maxSize, maxSizeText,
-                        maxRayTraceDistance, consumeItems, generatePreviewOnMove, durabilityAmount, durabilityEnabled, durabilityText,
-                        breakSoundEnabled, breakSound, breakSoundMessage, previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ,
-                        pSpeed, pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials, isCraftable, craftingRecipeEnabled, recipeShape,
-                        recipeIngredients, undoHistorySize);
+                Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, wandType, staticLength,
+                        staticWidth, maxSize, maxSizeText, maxRayTraceDistance, consumeItems, generatePreviewOnMove,
+                        durabilityAmount, durabilityEnabled, durabilityText, breakSoundEnabled, breakSound, breakSoundMessage,
+                        previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ, pSpeed,
+                        pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
+                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize);
                 wandConfigs.put(wandId, wand);
                 wandList.add(wand);
             }
