@@ -26,15 +26,15 @@ public class MessageManager {
             BuildersWand plugin = BuildersWand.getInstance();
             messagesFile = new File(plugin.getDataFolder(), "messages.yml");
             if (!messagesFile.exists()) {
-                plugin.saveResource("messages.yml", false);
+                plugin.saveResource("messages.yml", true);
             }
             loadMessagesFromFile();
             String fileVersion = messages.getString("config-version", "unknown");
             if (!fileVersion.equals(CURRENT_VERSION)) {
-                Util.error("OUTDATED messages.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
+                Util.error("OUTDATED messages.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
                 Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub.");
             }
-            Util.log("MessageManager initialized successfully!");
+            Util.debug("MessageManager initialized successfully!");
         }
         catch (Exception e) {
             Util.error("Failed to initialize MessageManager: " + e.getMessage());
@@ -45,18 +45,18 @@ public class MessageManager {
         if (messagesFile == null || !messagesFile.exists()) {
             throw new RuntimeException("messages.yml file not found at: " + messagesFile);
         }
+        messages = YamlConfiguration.loadConfiguration(messagesFile);
         String fileVersion = messages.getString("config-version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
             Util.error("OUTDATED messages.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
             Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
         }
-        messages = YamlConfiguration.loadConfiguration(messagesFile);
         Util.debug("Messages YAML loaded from disk");
     }
 
     public static void reload() {
         try {
-            loadMessagesFromFile();
+            initialize();
             Util.debug("Messages reloaded successfully");
         }
         catch (Exception e) {
@@ -134,15 +134,29 @@ public class MessageManager {
         return msg;
     }
 
+    public static String getWandSenderMessage(Messages message, Wand wand, CommandSender sender) {
+        String msg = getWandMessage(message, wand);
+        if (wand == null) {
+            return msg;
+        }
+        if (sender == null) {
+            return msg;
+        }
+        if (msg.contains("{player_name}")) {
+            msg = msg.replace("{player_name}", sender.getName());
+        }
+        return msg;
+    }
+
     public static String getMessage(Messages message) {
         if (messages == null) {
             Util.error("MessageManager not initialized!");
-            return "&c[Missing: " + message.getKey() + "]";
+            return "&cMissing: [" + message.getKey() + "]";
         }
         String msg = messages.getString(message.getKey());
         if (msg == null) {
             Util.debug("Message key not found: " + message.getKey());
-            return "&c[Missing: " + message.getKey() + "]";
+            return "&cMissing: [" + message.getKey() + "]";
         }
         return msg;
     }
@@ -241,7 +255,7 @@ public class MessageManager {
         if (player == null) {
             return;
         }
-        player.sendMessage(Util.toPrefixedComponent(getWandMessage(message, wand)));
+        player.sendMessage(Util.toPrefixedComponent(getWandSenderMessage(message, wand, player)));
     }
 
     public void sendActionBar(Messages message) {

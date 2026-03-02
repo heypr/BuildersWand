@@ -81,7 +81,7 @@ public class GiveCommand implements Subcommand {
         target.getInventory().addItem(item);
         MessageManager.sendMessage(target, MessageManager.Messages.WAND_RECEIVED, wand);
         if (target != source.getSender()) {
-            MessageManager.sendMessage(target, MessageManager.Messages.WAND_GIVEN, wand);
+            MessageManager.sendMessage(source.getSender(), MessageManager.Messages.WAND_GIVEN, wand);
         }
         return Command.SINGLE_SUCCESS;
     }

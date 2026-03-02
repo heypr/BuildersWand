@@ -33,8 +33,8 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         String fileVersion = plugin.getConfig().getString("config-version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
-            Util.error("OUTDATED config.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
-            Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
+            Util.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
+            Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
         }
         Util.debug("Starting ConfigManager load sequence...");
         if (BuildersWand.getRecipeManager() != null) {

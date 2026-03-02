@@ -12,7 +12,7 @@ command:
   wand-received: "&aYou received a {id} wand!"
   wand-given: "&aGave {id} to {player_name}"
   only-players: "&cOnly players can give wands to themselves."
-  wand-list: "&eWands:"
+  wand-list: "&eWands: "
 
 wand:
   # Placement messages
