@@ -4,7 +4,10 @@ import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.utility.Util;
+import net.kyori.adventure.key.Key;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -34,7 +37,7 @@ public class ConfigManager {
         String fileVersion = plugin.getConfig().getString("config-version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
             Util.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
-            Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
+            Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
         }
         Util.debug("Starting ConfigManager load sequence...");
         if (BuildersWand.getRecipeManager() != null) {

@@ -32,7 +32,7 @@ public class MessageManager {
             String fileVersion = messages.getString("config-version", "unknown");
             if (!fileVersion.equals(CURRENT_VERSION)) {
                 Util.error("OUTDATED messages.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
-                Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub.");
+                Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page and on GitHub.");
             }
             Util.debug("MessageManager initialized successfully!");
         }
@@ -46,11 +46,6 @@ public class MessageManager {
             throw new RuntimeException("messages.yml file not found at: " + messagesFile);
         }
         messages = YamlConfiguration.loadConfiguration(messagesFile);
-        String fileVersion = messages.getString("config-version", "unknown");
-        if (!fileVersion.equals(CURRENT_VERSION)) {
-            Util.error("OUTDATED messages.yml: Expected " + CURRENT_VERSION + " but found " + fileVersion);
-            Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page or on GitHub. If you need help, please get in touch via the support Discord.");
-        }
         Util.debug("Messages YAML loaded from disk");
     }
 
