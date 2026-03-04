@@ -7,7 +7,6 @@ import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.commands.sub.Subcommand;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
-import dev.heypr.buildersWand.utility.Util;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import net.kyori.adventure.text.Component;
@@ -34,16 +33,12 @@ public class ListCommand implements Subcommand {
             MessageManager.sendMessage(source.getSender(), MessageManager.Messages.NO_WANDS);
             return Command.SINGLE_SUCCESS;
         }
-        TextComponent.Builder msg = MessageManager.getPrefixedMessage(MessageManager.Messages.LIST_WANDS).toBuilder();
-        int i = 0;
+        TextComponent.Builder msg = Component.text().append(MessageManager.getPrefixedMessage(MessageManager.Messages.LIST_WANDS));
         for (Wand wand : wands) {
             msg.append(Component.text(wand.getId())
                     .color(NamedTextColor.YELLOW)
-                    .hoverEvent(HoverEvent.showText(Util.toPrefixedComponent("&e/bw give " + wand.getName())))
+                    .hoverEvent(HoverEvent.showText(wand.getName()))
                     .clickEvent(ClickEvent.runCommand("/bw give " + wand.getId())));
-            if (++i < wands.size()) {
-                msg.append(Component.text(", ").color(NamedTextColor.GRAY));
-            }
         }
         source.getSender().sendMessage(msg.build());
         return Command.SINGLE_SUCCESS;

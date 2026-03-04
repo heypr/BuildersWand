@@ -4,11 +4,6 @@
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
 config_version: 1.5.0
 
-# this is the prefix for all messages sent by the plugin.
-# this is an optional setting, if you remove it the default prefix will be used
-# supports minimessage formatting (along with the display name and lore of wands)
-prefix: "&7[&bBuildersWand&7] &r"
-
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand
 # set to false if you want to handle block place event cancellations yourself and don't want extra events fired
 # set to true if you want to allow other plugins to handle block place event cancellations (like WorldGuard or SuperiorSkyblock)

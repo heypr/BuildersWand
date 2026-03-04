@@ -4,10 +4,7 @@ import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.utility.Util;
-import net.kyori.adventure.key.Key;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -57,8 +54,7 @@ public class ConfigManager {
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-        String prefix = config.getString("prefix", "&7[&bBuildersWand&7] &r");
-        Util.PREFIX = Util.toComponent(prefix);
+        Util.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
     }
 
     public static List<Wand> loadWandConfigs() {

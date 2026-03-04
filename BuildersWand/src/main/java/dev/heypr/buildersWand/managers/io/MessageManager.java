@@ -60,6 +60,7 @@ public class MessageManager {
     }
 
     public enum Messages {
+        PREFIX("prefix"),
         USAGE("command.usage"),
         RELOAD_SUCCESS("command.reload.success"),
         NO_WANDS("command.no-wands"),
@@ -93,6 +94,10 @@ public class MessageManager {
 
     public static TextComponent getPrefixedMessage(Messages message) {
         return Util.toPrefixedComponent(getMessage(message));
+    }
+
+    public static TextComponent getRegularMessage(Messages message) {
+        return Util.toComponent(getMessage(message));
     }
 
     private static String getWandValue(Wand wand, String value) {
@@ -145,7 +150,7 @@ public class MessageManager {
 
     public static String getMessage(Messages message) {
         if (messages == null) {
-            Util.error("MessageManager not initialized!");
+            Util.error("MessageManager not initialized! Get in touch via Discord to resolve this!");
             return "&cMissing: [" + message.getKey() + "]";
         }
         String msg = messages.getString(message.getKey());
