@@ -1,24 +1,24 @@
 package dev.heypr.buildersWand;
 
 import dev.heypr.buildersWand.api.BuildersWandAPI;
-import dev.heypr.buildersWand.commands.WandCommand;
+import dev.heypr.buildersWand.commands.BuildersWandCommand;
 import dev.heypr.buildersWand.impl.ApiImplementation;
 import dev.heypr.buildersWand.listeners.WandListener;
-import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.io.ConfigManager;
+import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.metrics.Metrics;
 import dev.heypr.buildersWand.utility.Util;
+import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuildersWand extends JavaPlugin {
-
     private static final WandManager wandManager = new WandManager();
     private static RecipeManager recipeManager;
-
     private static BuildersWand instance;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
@@ -34,23 +34,16 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_UUID = new NamespacedKey(this, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
         recipeManager = new RecipeManager(this);
-
-        saveDefaultConfig();
-
         BuildersWand.getWandManager().registerWands();
+        MessageManager.initialize();
         ConfigManager.load();
-
         BuildersWandAPI.setInstance(new ApiImplementation(this));
-
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
-
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
-            final io.papermc.paper.command.brigadier.Commands commands = event.registrar();
-            new WandCommand().register(commands);
+            final Commands commands = event.registrar();
+            new BuildersWandCommand().register(commands);
         });
-
         new Metrics(this, 27729);
-
         Updater.start(this);
         Util.log("BuildersWand enabled!");
     }

@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WandItemImpl implements WandItem {
-
     private final ItemStack wandStack;
     private final Wand wandConfig;
 
@@ -62,12 +61,12 @@ public class WandItemImpl implements WandItem {
     @Override
     public WandItem updateLore() {
         ItemMeta meta = wandStack.getItemMeta();
-        if (meta == null) return this;
-
+        if (meta == null) {
+            return this;
+        }
         List<Component> finalLore = new ArrayList<>();
         int currentDurability = getDurability();
         int currentMaxSize = getMaxSize();
-
         if (wandConfig.isDurabilityEnabled()) {
             Component durabilityText = wandConfig.getDurabilityText()
                     .replaceText(TextReplacementConfig.builder()
@@ -75,13 +74,11 @@ public class WandItemImpl implements WandItem {
                             .replacement(String.valueOf(currentDurability)).build());
             finalLore.add(durabilityText);
         }
-
         Component sizeText = wandConfig.getMaxSizeText()
                 .replaceText(TextReplacementConfig.builder()
                         .match("\\{maxSize\\}")
                         .replacement(String.valueOf(currentMaxSize)).build());
         finalLore.add(sizeText);
-
         finalLore.addAll(wandConfig.getLore());
         meta.lore(finalLore);
         wandStack.setItemMeta(meta);

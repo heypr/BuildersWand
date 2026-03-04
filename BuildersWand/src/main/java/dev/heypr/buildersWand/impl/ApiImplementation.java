@@ -5,14 +5,13 @@ import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.api.ModifiableWandConfig;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.api.WandItem;
-import dev.heypr.buildersWand.managers.ConfigManager;
+import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
 
 public class ApiImplementation extends BuildersWandAPI {
-
     private final BuildersWand plugin;
 
     public ApiImplementation(BuildersWand plugin) {
