@@ -7,27 +7,23 @@
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
 config-version: 1.5.0
 
-# Command-related messages
-
 prefix: "&7[&bBuildersWand&7] &r"
 
 command:
-  usage: "&cUsage: /builderswand <reload|list|give> <id> [player]" # <-- id and player are only needed for
+  usage: "&cUsage: /builderswand <reload|list|give> <id> [player]" # <-- id and player are only needed for the give command
   reload:
     success: "&aConfiguration has been reloaded."
   no-wands: "&cNo wands found."
-  wand-not-found: "&cNo wand found with ID: {id}"
+  wand-not-found: "&cNo wand found with ID: {id}."
   wand-received: "&aYou received a {id} wand!"
-  wand-given: "&aGave {id} to {player_name}"
+  wand-given: "&aGave {id} to {player_name}."
   only-players: "&cOnly players can give wands to themselves."
   wand-list: "&eWands: "
 
 wand:
-  # Placement messages
   placing-blocks: "&7Placing blocks... &e{remaining} &7left"
   placement-complete: "&aBlock placement complete!"
 
-  # Error/Warning messages
   misconfigured: "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."
   no-permission: "&4You do not have permission to use this wand."
   still-placing: "&4Wand is still placing blocks, please wait..."
@@ -37,6 +33,5 @@ wand:
   nothing-to-undo: "&cNothing to undo!"
   action-undone: "&aAction undone! &c{remaining} &aundoes remaining."
 
-# Updater Message
 updater:
   available: "&aAn update for BuildersWand is available! Check console for more info."

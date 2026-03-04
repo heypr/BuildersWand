@@ -15,11 +15,6 @@ public class MessageManager {
     private static final String CURRENT_VERSION = "1.5.0";
     private static FileConfiguration messages;
     private static File messagesFile;
-    private Player player;
-
-    public MessageManager(Player player) {
-        this.player = player;
-    }
 
     public static void initialize() {
         try {
@@ -60,35 +55,41 @@ public class MessageManager {
     }
 
     public enum Messages {
-        PREFIX("prefix"),
-        USAGE("command.usage"),
-        RELOAD_SUCCESS("command.reload.success"),
-        NO_WANDS("command.no-wands"),
-        WAND_NOT_FOUND("command.wand-not-found"),
-        WAND_RECEIVED("command.wand-received"),
-        WAND_GIVEN("command.wand-given"),
-        ONLY_PLAYERS("command.only-players"),
-        LIST_WANDS("command.wand-list"),
-        PLACING_BLOCKS("wand.placing-blocks"),
-        PLACEMENT_COMPLETE("wand.placement-complete"),
-        MISCONFIGURED("wand.misconfigured"),
-        NO_PERMISSION("wand.no-permission"),
-        STILL_PLACING("wand.still-placing"),
-        COOLDOWN_ACTIVE("wand.cooldown-active"),
-        INSUFFICIENT_BLOCKS("wand.insufficient-blocks"),
-        PLACEMENT_DISALLOWED("wand.placement-disallowed"),
-        NOTHING_TO_UNDO("wand.nothing-to-undo"),
-        ACTION_UNDONE("wand.action-undone"),
-        UPDATE_AVAILABLE("updater.available");
+        PREFIX("prefix", "&7[&bBuildersWand&7] &r"),
+        USAGE("command.usage", "&cUsage: /builderswand <reload|list|give> <id> [player]\" # <-- id and player are only needed for the give command"),
+        RELOAD_SUCCESS("command.reload.success", "&aConfiguration has been reloaded."),
+        NO_WANDS("command.no-wands", "&cNo wands found."),
+        WAND_NOT_FOUND("command.wand-not-found", "&cNo wand found with ID: {id}"),
+        WAND_RECEIVED("command.wand-received", "&aYou received a {id} wand!"),
+        WAND_GIVEN("command.wand-given", "&aGave {id} to {player_name}."),
+        ONLY_PLAYERS("command.only-players", "&cOnly players can give wands to themselves."),
+        LIST_WANDS("command.wand-list", "&eWands: "),
+        PLACING_BLOCKS("wand.placing-blocks", "&7Placing blocks... &e{remaining} &7left"),
+        PLACEMENT_COMPLETE("wand.placement-complete", "&aBlock placement complete!"),
+        MISCONFIGURED("wand.misconfigured", "&4The wand you had was misconfigured and has been removed. Please contact an administrator immediately."),
+        NO_PERMISSION("wand.no-permission", "&4You do not have permission to use this wand."),
+        STILL_PLACING("wand.still-placing", "&4Wand is still placing blocks, please wait..."),
+        COOLDOWN_ACTIVE("wand.cooldown-active", "&4Please wait &c{seconds} &4seconds before using the wand again."),
+        INSUFFICIENT_BLOCKS("wand.insufficient-blocks", "&4You need &c{needed} &4more &c{material} &4blocks."),
+        PLACEMENT_DISALLOWED("wand.placement-disallowed", "&4Disallowed."),
+        NOTHING_TO_UNDO("wand.nothing-to-undo", "&cNothing to undo!"),
+        ACTION_UNDONE("wand.action-undone", "&aAction undone! &c{remaining} &aundoes remaining."),
+        UPDATE_AVAILABLE("updater.available", "&aAn update for BuildersWand is available! Check console for more info.");
 
         private final String key;
+        private final String defaultValue;
 
-        Messages(String key) {
+        Messages(String key, String defaultValue) {
             this.key = key;
+            this.defaultValue = defaultValue;
         }
 
         public String getKey() {
             return key;
+        }
+
+        public String getDefaultValue() {
+            return defaultValue;
         }
     }
 
@@ -151,12 +152,12 @@ public class MessageManager {
     public static String getMessage(Messages message) {
         if (messages == null) {
             Util.error("MessageManager not initialized! Get in touch via Discord to resolve this!");
-            return "&cMissing: [" + message.getKey() + "]";
+            return "&4Missing: &c[" + message.getKey() + "]";
         }
         String msg = messages.getString(message.getKey());
         if (msg == null) {
-            Util.debug("Message key not found: " + message.getKey());
-            return "&cMissing: [" + message.getKey() + "]";
+            Util.error("Message key not found: '" + message.getKey() + "'! Using default value.");
+            return message.getDefaultValue();
         }
         return msg;
     }
@@ -256,29 +257,5 @@ public class MessageManager {
             return;
         }
         player.sendMessage(Util.toPrefixedComponent(getWandSenderMessage(message, wand, player)));
-    }
-
-    public void sendActionBar(Messages message) {
-        sendActionBar(player, message);
-    }
-
-    public void sendActionBar(Messages message, String key, String value) {
-        sendActionBar(player, message, key, value);
-    }
-
-    public void sendActionBar(Messages message, Object... placeholders) {
-        sendActionBar(player, message, placeholders);
-    }
-
-    public void sendMessage(Messages message) {
-        sendMessage(player, message);
-    }
-
-    public void sendMessage(Messages message, String key, String value) {
-        sendMessage(player, message, key, value);
-    }
-
-    public void sendMessage(Messages message, Object... placeholders) {
-        sendMessage(player, message, placeholders);
     }
 }

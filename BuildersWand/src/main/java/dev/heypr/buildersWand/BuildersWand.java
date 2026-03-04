@@ -35,8 +35,8 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
         recipeManager = new RecipeManager(this);
         BuildersWand.getWandManager().registerWands();
-        ConfigManager.load();
         MessageManager.initialize();
+        ConfigManager.load();
         BuildersWandAPI.setInstance(new ApiImplementation(this));
         Bukkit.getPluginManager().registerEvents(new WandListener(), this);
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
