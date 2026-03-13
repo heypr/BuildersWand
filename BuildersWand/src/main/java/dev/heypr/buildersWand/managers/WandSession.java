@@ -11,7 +11,7 @@ import java.util.concurrent.CompletableFuture;
 public class WandSession {
     public CompletableFuture<Void> currentCalculation;
     public Set<Block> previewBlocks = new HashSet<>();
-    public Deque<List<BlockState>> undoHistory = new ArrayDeque<>();
+    public Stack<List<BlockState>> undoHistory = new Stack<>();
     public Block lastTargetBlock;
     public BlockFace lastTargetFace;
     public BukkitRunnable particleTask;
