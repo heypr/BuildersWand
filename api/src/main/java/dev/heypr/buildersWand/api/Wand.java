@@ -50,6 +50,7 @@ public class Wand {
     private final List<String> recipeShape;
     private final Map<Character, Material> recipeIngredients;
     private final int undoHistorySize;
+    private final boolean canBreakBlocksWhileCrouched;
 
     public Wand(String id,
                 String name,
@@ -85,7 +86,8 @@ public class Wand {
                 boolean craftingRecipeEnabled,
                 List<String> recipeShape,
                 Map<Character, Material> recipeIngredients,
-                int undoHistorySize) {
+                int undoHistorySize,
+                boolean canBreakBlocksWhileCrouched) {
         this.id = id;
         this.name = name;
         this.material = material;
@@ -121,6 +123,7 @@ public class Wand {
         this.recipeShape = recipeShape;
         this.recipeIngredients = recipeIngredients;
         this.undoHistorySize = undoHistorySize;
+        this.canBreakBlocksWhileCrouched = canBreakBlocksWhileCrouched;
     }
 
     public String getId() {
@@ -267,5 +270,9 @@ public class Wand {
 
     public Component getBreakSoundMessage() {
         return Util.toPrefixedComponent(breakSoundMessage);
+    }
+
+    public boolean canBreakBlocksWhileCrouched() {
+        return canBreakBlocksWhileCrouched;
     }
 }

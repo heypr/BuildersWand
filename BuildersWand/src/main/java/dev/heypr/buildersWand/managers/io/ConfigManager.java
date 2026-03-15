@@ -106,6 +106,7 @@ public class ConfigManager {
                 int pSize = config.getInt(path + "previewParticle.options.size", 1);
                 float cooldown = (float) config.getDouble(path + "cooldown", 0);
                 int undoHistorySize = config.getInt(path + "undoHistorySize", 10);
+                boolean canBreakBlocksWhileCrouched = config.getBoolean(path + "canBreakBlocksWhileCrouched", false);
                 List<Material> blockedMaterials = new ArrayList<>();
                 for (String mat : config.getStringList(path + "blockedMaterials")) {
                     try {
@@ -155,7 +156,7 @@ public class ConfigManager {
                         durabilityAmount, durabilityEnabled, durabilityText, breakSoundEnabled, breakSound, breakSoundMessage,
                         previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ, pSpeed,
                         pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
-                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize);
+                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize, canBreakBlocksWhileCrouched);
                 wandConfigs.put(wandId, wand);
                 wandList.add(wand);
             }
