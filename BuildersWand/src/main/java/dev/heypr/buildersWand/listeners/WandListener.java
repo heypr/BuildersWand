@@ -237,19 +237,27 @@ public class WandListener implements Listener {
         if (!player.isSneaking()) {
             return;
         }
-        ItemStack wandItem = player.getInventory().getItemInMainHand();
-        if (!WandManager.isWand(wandItem)) {
+        ItemStack itemInHand = player.getInventory().getItemInMainHand();
+        if (!WandManager.isWand(itemInHand)) {
+            return;
+        }
+        else if (!WandManager.isRegisteredWand(itemInHand)) {
             if (ConfigManager.shouldDestroyInvalidWands()) {
                 Util.error("Removing misconfigured wand from their inventory...");
-                player.getInventory().removeItem(wandItem);
+                player.getInventory().removeItem(itemInHand);
                 MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
             }
             else {
                 Util.error("Misconfigured wand not removed due to configuration option.");
             }
         }
-        Wand wand = WandManager.getWand(wandItem);
-        event.setCancelled(true);
+        Wand wand = WandManager.getWand(itemInHand);
+        if (wand == null) {
+            return;
+        }
+        if (!wand.canBreakBlocksWhileCrouched()) {
+            event.setCancelled(true);
+        }
         WandSession session = getSession(player);
         if (session.undoHistory.isEmpty()) {
             MessageManager.sendActionBar(player, MessageManager.Messages.NOTHING_TO_UNDO);

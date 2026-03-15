@@ -55,6 +55,14 @@ public class WandManager {
         return hasKey;
     }
 
+    public static boolean isRegisteredWand(ItemStack item) {
+        Wand wand = getWand(item);
+        if (wand == null) {
+            return false;
+        }
+        return BuildersWand.getWandManager().registeredWands().contains(wand);
+    }
+
     public static Wand getWand(ItemStack item) {
         if (!isWand(item)) {
             Util.debug("getWand failed: Item is not a wand.");
