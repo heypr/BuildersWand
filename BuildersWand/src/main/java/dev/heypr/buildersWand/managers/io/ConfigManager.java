@@ -31,7 +31,7 @@ public class ConfigManager {
     public static void load() {
         BuildersWand plugin = BuildersWand.getInstance();
         plugin.saveDefaultConfig();
-        String fileVersion = plugin.getConfig().getString("config-version", "unknown");
+        String fileVersion = plugin.getConfig().getString("config_version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
             Util.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
             Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
