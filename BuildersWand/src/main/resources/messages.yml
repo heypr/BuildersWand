@@ -5,7 +5,7 @@
 
 # DO NOT EDIT THIS LINE!!!
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
-config-version: 1.5.0
+config_version: 1.5.0
 
 prefix: "&7[&bBuildersWand&7] &r"
 
