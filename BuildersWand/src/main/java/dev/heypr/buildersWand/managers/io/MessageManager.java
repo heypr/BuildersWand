@@ -24,7 +24,7 @@ public class MessageManager {
                 plugin.saveResource("messages.yml", true);
             }
             loadMessagesFromFile();
-            String fileVersion = messages.getString("config-version", "unknown");
+            String fileVersion = messages.getString("config_version", "unknown");
             if (!fileVersion.equals(CURRENT_VERSION)) {
                 Util.error("OUTDATED messages.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
                 Util.error("Please update your messages.yml to the latest version. A default messages.yml can be found on the plugin page and on GitHub.");
