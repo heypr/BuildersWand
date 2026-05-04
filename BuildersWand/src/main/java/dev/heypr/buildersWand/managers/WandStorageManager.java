@@ -3,7 +3,7 @@ package dev.heypr.buildersWand.managers;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import dev.heypr.buildersWand.BuildersWand;
-import org.bukkit.entity.Player;
+import dev.heypr.buildersWand.api.Wand;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WandStorageManager {
 
     private BuildersWand plugin;
-    private ConcurrentHashMap<Player, WandStorage> storage = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Wand, WandStorage> storage = new ConcurrentHashMap<>();
     private final HikariDataSource dataSource;
 
     public WandStorageManager(BuildersWand plugin) {
@@ -44,8 +44,8 @@ public class WandStorageManager {
         // implement sql storage, loading from db to storage map in memory
     }
 
-    public synchronized WandStorage getStorage(Player player) {
-        return storage.get(player);
+    public synchronized WandStorage getStorage(Wand wand) {
+        return storage.get(wand);
     }
 
     public void save() {
