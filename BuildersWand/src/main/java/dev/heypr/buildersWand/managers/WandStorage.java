@@ -1,8 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.api.Wand;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -14,13 +14,13 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WandStorage implements InventoryHolder {
 
     private final Inventory inventory;
-    private final Player player;
+    private final Wand wand;
     private final ConcurrentHashMap<Integer, ItemStack> contentMap = new ConcurrentHashMap<>();
     private final Collection<ItemStack> contentList = this.contentMap.values();
 
-    public WandStorage(BuildersWand plugin, Player player) {
+    public WandStorage(BuildersWand plugin, Wand wand) {
         this.inventory = plugin.getServer().createInventory(this, 54);
-        this.player = player;
+        this.wand = wand;
     }
 
     @Override
@@ -29,8 +29,8 @@ public class WandStorage implements InventoryHolder {
         return this.inventory;
     }
 
-    public Player getPlayer() {
-        return this.player;
+    public Wand getWand() {
+        return this.wand;
     }
 
     public ItemStack getItem(int slot) {

@@ -4,8 +4,6 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import dev.heypr.buildersWand.BuildersWand;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.io.File;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,12 +34,6 @@ public class WandStorageManager {
         config.addDataSourceProperty("synchronous", "NORMAL");
 
         this.dataSource = new HikariDataSource(config);
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        WandStorage wandStorage = new WandStorage(plugin, player);
     }
 
     public void createTables() {
