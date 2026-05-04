@@ -1,8 +1,9 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
-import dev.heypr.buildersWand.listeners.WandListener;
+import dev.heypr.buildersWand.listeners.WandUseListener;
 import dev.heypr.buildersWand.managers.io.MessageManager;
+import dev.heypr.buildersWand.utility.BlockFinderUtil;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -43,7 +44,7 @@ public class PlacementQueueManager {
                     if (size > 50) {
                         MessageManager.sendMessage(player, MessageManager.Messages.PLACEMENT_COMPLETE);
                     }
-                    WandListener.getInstance().unlockPlayer(player);
+                    WandUseListener.getInstance().unlockPlayer(player);
                     this.cancel();
                 }
             }
@@ -55,6 +56,6 @@ public class PlacementQueueManager {
     }
 
     private boolean isReplaceable(Material material) {
-        return BlockFinder.REPLACEABLE.contains(material);
+        return BlockFinderUtil.REPLACEABLE.contains(material);
     }
 }

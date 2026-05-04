@@ -3,7 +3,7 @@ package dev.heypr.buildersWand.managers.io;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.api.Wand;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -33,10 +33,10 @@ public class ConfigManager {
         plugin.saveDefaultConfig();
         String fileVersion = plugin.getConfig().getString("config_version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
-            Util.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
-            Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
+            ComponentUtil.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
+            ComponentUtil.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
         }
-        Util.debug("Starting ConfigManager load sequence...");
+        ComponentUtil.debug("Starting ConfigManager load sequence...");
         if (BuildersWand.getRecipeManager() != null) {
             BuildersWand.getRecipeManager().unregisterRecipes();
         }
@@ -54,7 +54,7 @@ public class ConfigManager {
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-        Util.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
+        ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
     }
 
     public static List<Wand> loadWandConfigs() {
@@ -63,7 +63,7 @@ public class ConfigManager {
         FileConfiguration config = BuildersWand.getInstance().getConfig();
         ConfigurationSection wandsSection = config.getConfigurationSection("wands");
         if (wandsSection == null) {
-            Util.debug("Critical: 'wands' section is missing from config.yml!");
+            ComponentUtil.debug("Critical: 'wands' section is missing from config.yml!");
             return wandList;
         }
         for (String wandId : wandsSection.getKeys(false)) {
@@ -90,7 +90,7 @@ public class ConfigManager {
                     breakSound = Sound.valueOf(breakSoundName);
                 }
                 catch (Exception e) {
-                    Util.debug("Invalid break sound for wand '" + wandId + "': " + breakSoundName + ". Defaulting to ENTITY_ITEM_BREAK.");
+                    ComponentUtil.debug("Invalid break sound for wand '" + wandId + "': " + breakSoundName + ". Defaulting to ENTITY_ITEM_BREAK.");
                     breakSound = Sound.ENTITY_ITEM_BREAK;
                 }
                 String breakSoundMessage = config.getString(path + "durability.breakSound.message", "&cYour wand broke!");
@@ -119,16 +119,16 @@ public class ConfigManager {
                 List<String> recipeShape = config.getStringList(path + "craftingRecipe.shape");
                 Map<Character, Material> recipeIngredients = new HashMap<>();
                 if (craftingRecipeEnabled) {
-                    Util.debug("Loading recipe for wand " + wandId + "...");
+                    ComponentUtil.debug("Loading recipe for wand " + wandId + "...");
                     recipeShape = config.getStringList(path + "craftingRecipe.shape");
                     if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
-                        Util.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
+                        ComponentUtil.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
                         craftingRecipeEnabled = false;
                     }
                     else {
                         ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
                         if (ingredientsSection == null) {
-                            Util.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
+                            ComponentUtil.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
                             craftingRecipeEnabled = false;
                         }
                         else {
@@ -139,11 +139,11 @@ public class ConfigManager {
                                     if (materialName != null) {
                                         Material mat = Material.valueOf(materialName.toUpperCase());
                                         recipeIngredients.put(ingredientChar, mat);
-                                        Util.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
+                                        ComponentUtil.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
                                     }
                                 }
                                 catch (IllegalArgumentException e) {
-                                    Util.error("Wand " + wandId + " invalid ingredient: " + materialName);
+                                    ComponentUtil.error("Wand " + wandId + " invalid ingredient: " + materialName);
                                     craftingRecipeEnabled = false;
                                     break;
                                 }
@@ -161,7 +161,7 @@ public class ConfigManager {
                 wandList.add(wand);
             }
             catch (Exception e) {
-                Util.error("Failed to load wand: " + wandId);
+                ComponentUtil.error("Failed to load wand: " + wandId);
             }
         }
         return wandList;

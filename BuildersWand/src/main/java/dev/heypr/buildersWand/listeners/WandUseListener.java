@@ -8,13 +8,14 @@ import dev.heypr.buildersWand.hooks.BentoBoxHook;
 import dev.heypr.buildersWand.hooks.LandsHook;
 import dev.heypr.buildersWand.hooks.SuperiorSkyblockHook;
 import dev.heypr.buildersWand.hooks.WorldGuardHook;
-import dev.heypr.buildersWand.managers.BlockFinder;
+import dev.heypr.buildersWand.utility.BlockFinderUtil;
 import dev.heypr.buildersWand.managers.PlacementQueueManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.managers.WandSession;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
+import dev.heypr.buildersWand.utility.InventoryUtil;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -23,10 +24,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
-import org.bukkit.event.block.CrafterCraftEvent;
-import org.bukkit.event.inventory.FurnaceBurnEvent;
-import org.bukkit.event.inventory.FurnaceSmeltEvent;
-import org.bukkit.event.inventory.PrepareItemCraftEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -37,56 +34,20 @@ import org.bukkit.util.RayTraceResult;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
-public class WandListener implements Listener {
-    private static WandListener instance;
+public class WandUseListener implements Listener {
+    private static WandUseListener instance;
     private final Map<UUID, WandSession> sessions = new HashMap<>();
 
-    public WandListener() {
+    public WandUseListener() {
         instance = this;
     }
 
-    public static WandListener getInstance() {
+    public static WandUseListener getInstance() {
         return instance;
     }
 
     private WandSession getSession(Player player) {
         return sessions.computeIfAbsent(player.getUniqueId(), k -> new WandSession());
-    }
-
-    @EventHandler
-    public void onCraft(PrepareItemCraftEvent event) {
-        for (ItemStack item : event.getInventory().getMatrix()) {
-            if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
-                event.getInventory().setResult(null);
-                break;
-            }
-        }
-    }
-
-    @EventHandler
-    public void onCrafterCraft(CrafterCraftEvent event) {
-        ItemStack item = event.getResult();
-        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
-            event.setResult(new ItemStack(Material.AIR));
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onFurnaceBurn(FurnaceBurnEvent event) {
-        ItemStack item = event.getFuel();
-        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
-            event.setConsumeFuel(false);
-            event.setCancelled(true);
-        }
-    }
-
-    @EventHandler
-    public void onFurnaceSmelt(FurnaceSmeltEvent event) {
-        ItemStack item = event.getResult();
-        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
-            event.setCancelled(true);
-        }
     }
 
     @EventHandler
@@ -112,12 +73,12 @@ public class WandListener implements Listener {
         Wand wand = WandManager.getWand(wandItem);
         if (wand == null) {
             if (ConfigManager.shouldDestroyInvalidWands()) {
-                Util.error("Removing misconfigured wand from their inventory...");
+                ComponentUtil.error("Removing misconfigured wand from their inventory...");
                 player.getInventory().removeItem(wandItem);
                 MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
             }
             else {
-                Util.error("Misconfigured wand not removed due to configuration option.");
+                ComponentUtil.error("Misconfigured wand not removed due to configuration option.");
             }
             return;
         }
@@ -147,7 +108,7 @@ public class WandListener implements Listener {
         }
         int needed = session.previewBlocks.size();
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
-            int available = getItemCount(player, session.lastTargetBlock.getType());
+            int available = InventoryUtil.getItemCount(player, session.lastTargetBlock.getType());
             if (available < needed) {
                 MessageManager.sendMessage(player, MessageManager.Messages.INSUFFICIENT_BLOCKS, "needed", needed - available, "material", session.lastTargetBlock.getType().name());
                 session.previewBlocks.clear();
@@ -189,7 +150,7 @@ public class WandListener implements Listener {
             session.undoHistory.removeFirst();
         }
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
-            removeItems(player, session.lastTargetBlock.getType(), needed);
+            InventoryUtil.removeItems(player, session.lastTargetBlock.getType(), needed);
         }
         if (ConfigManager.isPlacementQueueEnabled()) {
             new PlacementQueueManager(player, finalBlocksToPlace, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
@@ -207,7 +168,7 @@ public class WandListener implements Listener {
                 player.getInventory().removeItem(wandItem);
                 if (wand.isBreakSoundEnabled()) {
                     if (wand.getBreakSound() == null) {
-                        Util.error("Break sound not configured for wand " + wand.getId() + ". Using default sound.");
+                        ComponentUtil.error("Break sound not configured for wand " + wand.getId() + ". Using default sound.");
                         player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
                     }
                     else {
@@ -243,12 +204,12 @@ public class WandListener implements Listener {
         }
         else if (!WandManager.isRegisteredWand(itemInHand)) {
             if (ConfigManager.shouldDestroyInvalidWands()) {
-                Util.error("Removing misconfigured wand from their inventory...");
+                ComponentUtil.error("Removing misconfigured wand from their inventory...");
                 player.getInventory().removeItem(itemInHand);
                 MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
             }
             else {
-                Util.error("Misconfigured wand not removed due to configuration option.");
+                ComponentUtil.error("Misconfigured wand not removed due to configuration option.");
             }
         }
         Wand wand = WandManager.getWand(itemInHand);
@@ -264,6 +225,7 @@ public class WandListener implements Listener {
             return;
         }
         List<BlockState> lastAction = session.undoHistory.pop();
+        // todo: item return. to be moved to inventoryutil.
         List<ItemStack> itemsToReturn = new ArrayList<>();
         for (BlockState oldState : lastAction) {
             Block currentBlock = oldState.getBlock();
@@ -275,6 +237,7 @@ public class WandListener implements Listener {
         if (!itemsToReturn.isEmpty() && !player.getGameMode().isInvulnerable()) {
             player.give(itemsToReturn.toArray(new ItemStack[0]));
         }
+        // todo: item return. to be moved to inventoryutil.
         MessageManager.sendActionBar(player, MessageManager.Messages.ACTION_UNDONE, "remaining", session.undoHistory.size());
     }
 
@@ -302,10 +265,10 @@ public class WandListener implements Listener {
         session.lastTargetFace = face;
         session.currentCalculation = CompletableFuture.supplyAsync(() -> {
             if (wand.getWandType() == Wand.WandType.STATIC) {
-                return BlockFinder.getStaticBlocks(hitBlock, face, wand.getStaticLength(), wand.getStaticWidth());
+                return BlockFinderUtil.getStaticBlocks(hitBlock, face, wand.getStaticLength(), wand.getStaticWidth());
             }
             else {
-                return BlockFinder.findConnectedBlocks(hitBlock, face, wand.getMaxSize(), wand.getBlockedMaterials());
+                return BlockFinderUtil.findConnectedBlocks(hitBlock, face, wand.getMaxSize(), wand.getBlockedMaterials());
             }
         }).thenAcceptAsync(sourceBlocks -> {
             Set<Block> validTargets = new HashSet<>();
@@ -350,7 +313,7 @@ public class WandListener implements Listener {
                 return false;
             }
         }
-        return BlockFinder.isReplaceable(target);
+        return BlockFinderUtil.isReplaceable(target);
     }
 
     private void startParticleTask(Player player, Wand wand, WandSession session) {
@@ -400,33 +363,5 @@ public class WandListener implements Listener {
 
     public void unlockPlayer(Player player) {
         getSession(player).placing = false;
-    }
-
-    private int getItemCount(Player player, Material material) {
-        int count = 0;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item != null && item.getType() == material) {
-                count += item.getAmount();
-            }
-        }
-        return count;
-    }
-
-    private void removeItems(Player player, Material material, int amount) {
-        int remaining = amount;
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (item == null || item.getType() != material) {
-                continue;
-            }
-            int amt = item.getAmount();
-            if (amt <= remaining) {
-                remaining -= amt;
-                item.setAmount(0);
-            }
-            else {
-                item.setAmount(amt - remaining);
-                break;
-            }
-        }
     }
 }
