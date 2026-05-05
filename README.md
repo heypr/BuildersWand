@@ -31,7 +31,7 @@ BuildersWand *does* feature an API, but currently there is no documentation nor 
 
 # DO NOT EDIT THIS LINE!!!
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
-config_version: 1.5.0
+config_version: 1.6.0
 
 # this isn't required for the build wand to work, but it does reduce the amount of fired events when placing blocks through the wand.
 # set to false if you want to handle block place event cancellations yourself and don't want extra events fired.

@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigManager {
-    private static final String CURRENT_VERSION = "1.5.0";
+    private static final String CURRENT_VERSION = "1.6.0";
     private static final Map<String, Wand> wandConfigs = new HashMap<>();
     private static boolean placementQueueEnabled;
     private static boolean fireWandBlockPlaceEvent;
@@ -27,6 +27,9 @@ public class ConfigManager {
     private static boolean updaterNotifyInGame;
     private static int maxBlocksPerTick;
     private static long updaterIntervalMinutes;
+    private static boolean wandStorageEnabled;
+    private static boolean wandStorageAutosaveEnabled;
+    private static long wandStorageAutosaveIntervalSeconds;
 
     public static void load() {
         BuildersWand plugin = BuildersWand.getInstance();
@@ -52,10 +55,13 @@ public class ConfigManager {
         debugModeEnabled = config.getBoolean("debug", false);
         updaterEnabled = config.getBoolean("updater.enabled", true);
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
-        updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
-        updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-        ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
-    }
+         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
+         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
+         wandStorageEnabled = config.getBoolean("wandStorage.enabled", true);
+         wandStorageAutosaveEnabled = config.getBoolean("wandStorage.autosave.enabled", true);
+         wandStorageAutosaveIntervalSeconds = config.getLong("wandStorage.autosave.intervalSeconds", 300L);
+         ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
+     }
 
     public static List<Wand> loadWandConfigs() {
         wandConfigs.clear();
@@ -217,5 +223,17 @@ public class ConfigManager {
 
     public static boolean notifyUpdateInGame() {
         return updaterNotifyInGame;
+    }
+
+    public static boolean isWandStorageEnabled() {
+        return wandStorageEnabled;
+    }
+
+    public static boolean isWandStorageAutosaveEnabled() {
+        return wandStorageAutosaveEnabled;
+    }
+
+    public static long getWandStorageAutosaveIntervalSeconds() {
+        return wandStorageAutosaveIntervalSeconds;
     }
 }

@@ -9,6 +9,7 @@ import dev.heypr.buildersWand.listeners.WandStorageListener;
 import dev.heypr.buildersWand.listeners.WandUseListener;
 import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
+import dev.heypr.buildersWand.managers.WandStorageManager;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.metrics.Metrics;
@@ -22,7 +23,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class BuildersWand extends JavaPlugin {
     private static final WandManager wandManager = new WandManager();
     private static RecipeManager recipeManager;
+    private static WandStorageManager storageManager;
     private static BuildersWand instance;
+
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
     public static NamespacedKey PDC_KEY_MAX_SIZE;
@@ -37,9 +40,13 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_UUID = new NamespacedKey(instance, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(instance, "builders_wand_max_size");
         recipeManager = new RecipeManager(instance);
-        BuildersWand.getWandManager().registerWands();
+        storageManager = new WandStorageManager(instance);
+        storageManager.createTables();
+        storageManager.load();
+        wandManager.registerWands();
         MessageManager.initialize();
         ConfigManager.load();
+        storageManager.startAutosave();
         registerEvents();
         BuildersWandAPI.setInstance(new ApiImplementation(instance));
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -54,6 +61,10 @@ public class BuildersWand extends JavaPlugin {
     @Override
     public void onDisable() {
         Updater.stop();
+        if (storageManager != null) {
+            storageManager.save();
+            storageManager.close();
+        }
         ComponentUtil.log("BuildersWand disabled.");
     }
 
@@ -78,6 +89,10 @@ public class BuildersWand extends JavaPlugin {
 
     public static RecipeManager getRecipeManager() {
         return recipeManager;
+    }
+
+    public static WandStorageManager getStorageManager() {
+        return storageManager;
     }
 
     public static boolean isSuperiorSkyblockEnabled() {

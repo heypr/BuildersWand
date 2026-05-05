@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'dev.heypr'
-version = '1.5.1-b' + (System.getenv("BUILD_NUMBER") ?: "DEV")
+version = '1.6.0-b' + (System.getenv("BUILD_NUMBER") ?: "DEV")
 
 repositories {
     mavenCentral()
@@ -37,6 +37,7 @@ dependencies {
     compileOnly("com.github.angeschossen:LandsAPI:7.15.4")
     compileOnly("world.bentobox:bentobox:3.1.1-SNAPSHOT")
     implementation("com.zaxxer:HikariCP:7.0.2")
+    implementation("commons-codec:commons-codec:1.5")
     implementation project(":api")
 }
 

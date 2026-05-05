@@ -8,12 +8,12 @@ import dev.heypr.buildersWand.hooks.BentoBoxHook;
 import dev.heypr.buildersWand.hooks.LandsHook;
 import dev.heypr.buildersWand.hooks.SuperiorSkyblockHook;
 import dev.heypr.buildersWand.hooks.WorldGuardHook;
-import dev.heypr.buildersWand.utility.BlockFinderUtil;
 import dev.heypr.buildersWand.managers.PlacementQueueManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.managers.WandSession;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
+import dev.heypr.buildersWand.utility.BlockFinderUtil;
 import dev.heypr.buildersWand.utility.ComponentUtil;
 import dev.heypr.buildersWand.utility.InventoryUtil;
 import org.bukkit.*;
@@ -72,14 +72,7 @@ public class WandUseListener implements Listener {
         }
         Wand wand = WandManager.getWand(wandItem);
         if (wand == null) {
-            if (ConfigManager.shouldDestroyInvalidWands()) {
-                ComponentUtil.error("Removing misconfigured wand from their inventory...");
-                player.getInventory().removeItem(wandItem);
-                MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
-            }
-            else {
-                ComponentUtil.error("Misconfigured wand not removed due to configuration option.");
-            }
+            handleMisconfiguredWand(player, wandItem);
             return;
         }
         if (!event.getAction().isRightClick() || event.getHand() != EquipmentSlot.HAND) {
@@ -99,9 +92,24 @@ public class WandUseListener implements Listener {
             generatePreview(player, wand);
             return;
         }
+        handlePlacement(player, wand, session);
+    }
+
+    private void handleMisconfiguredWand(Player player, ItemStack wandItem) {
+        if (ConfigManager.shouldDestroyInvalidWands()) {
+            ComponentUtil.error("Removing misconfigured wand from their inventory...");
+            player.getInventory().removeItem(wandItem);
+            MessageManager.sendMessage(player, MessageManager.Messages.MISCONFIGURED);
+        }
+        else {
+            ComponentUtil.error("Misconfigured wand not removed due to configuration option.");
+        }
+    }
+
+    private void handlePlacement(Player player, Wand wand, WandSession session) {
         long now = System.currentTimeMillis();
         long last = session.lastRightClickTime;
-        float cooldown = wand.getCooldown() * 1000L;
+        long cooldown = (long) (wand.getCooldown() * 1000L);
         if (now - last < cooldown) {
             MessageManager.sendActionBar(player, MessageManager.Messages.COOLDOWN_ACTIVE, "seconds", String.valueOf((int) ((cooldown - (now - last)) / 1000)));
             return;
@@ -134,59 +142,74 @@ public class WandUseListener implements Listener {
         }
         Set<Block> finalBlocksToPlace = new HashSet<>(session.previewBlocks);
         if (ConfigManager.shouldFireBlockPlaceEvent()) {
-            WandPlaceEvent wandEvent = new WandPlaceEvent(player, wandItem, wand, session.previewBlocks);
+            WandPlaceEvent wandEvent = new WandPlaceEvent(player, player.getInventory().getItemInMainHand(), wand, session.previewBlocks);
             Bukkit.getPluginManager().callEvent(wandEvent);
             if (wandEvent.isCancelled()) return;
             finalBlocksToPlace = wandEvent.getBlocksToPlace();
         }
-        if (wand.getUndoHistorySize() != 0) {
-            List<BlockState> currentAction = new ArrayList<>();
-            for (Block block : finalBlocksToPlace) {
-                currentAction.add(block.getState());
-            }
-            session.undoHistory.push(currentAction);
-        }
-        if (session.undoHistory.size() > wand.getUndoHistorySize() && wand.getUndoHistorySize() != -1) {
-            session.undoHistory.removeFirst();
-        }
+        storeUndoHistory(wand, session, finalBlocksToPlace);
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
             InventoryUtil.removeItems(player, session.lastTargetBlock.getType(), needed);
         }
+        placeBlocks(player, session, finalBlocksToPlace);
+        handleDurability(player, wand, player.getInventory().getItemInMainHand());
+        if (!wand.generatePreviewOnMove()) {
+            session.initialPlace = true;
+        }
+    }
+
+    private void storeUndoHistory(Wand wand, WandSession session, Set<Block> blocks) {
+        if (wand.getUndoHistorySize() == 0) return;
+        List<BlockState> currentAction = new ArrayList<>();
+        for (Block block : blocks) {
+            currentAction.add(block.getState());
+        }
+        session.undoHistory.push(currentAction);
+        if (session.undoHistory.size() > wand.getUndoHistorySize() && wand.getUndoHistorySize() != -1) {
+            session.undoHistory.removeFirst();
+        }
+    }
+
+    private void placeBlocks(Player player, WandSession session, Set<Block> blocks) {
         if (ConfigManager.isPlacementQueueEnabled()) {
-            new PlacementQueueManager(player, finalBlocksToPlace, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
+            new PlacementQueueManager(player, blocks, session.lastTargetBlock.getType(), ConfigManager.getMaxBlocksPerTick()).start();
         }
         else {
-            for (Block block : finalBlocksToPlace) {
+            for (Block block : blocks) {
                 block.setType(session.lastTargetBlock.getType(), true);
             }
         }
         session.previewBlocks.clear();
         session.lastTargetBlock = null;
         session.lastTargetFace = null;
-        if (WandManager.isWandDurabilityEnabled(wandItem)) {
-            if (WandManager.getWandDurability(wandItem) <= 1) {
-                player.getInventory().removeItem(wandItem);
-                if (wand.isBreakSoundEnabled()) {
-                    if (wand.getBreakSound() == null) {
-                        ComponentUtil.error("Break sound not configured for wand " + wand.getId() + ". Using default sound.");
-                        player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
-                    }
-                    else {
-                        player.playSound(player.getLocation(), wand.getBreakSound(), 1.0f, 1.0f);
-                    }
-                    player.sendActionBar(wand.getBreakSoundMessage());
-                }
-            }
-            else {
-                WandManager.decrementWandDurability(wandItem);
+    }
+
+    private void handleDurability(Player player, Wand wand, ItemStack wandItem) {
+        if (!WandManager.isWandDurabilityEnabled(wandItem)) {
+            WandManager.handleInfiniteDurability(wandItem);
+            return;
+        }
+        if (WandManager.getWandDurability(wandItem) <= 1) {
+            player.getInventory().removeItem(wandItem);
+            if (wand.isBreakSoundEnabled()) {
+                playBreakSound(player, wand);
             }
         }
         else {
-            WandManager.handleInfiniteDurability(wandItem);
+            WandManager.decrementWandDurability(wandItem);
         }
-        if (!wand.generatePreviewOnMove()) {
-            session.initialPlace = true;
+    }
+
+    private void playBreakSound(Player player, Wand wand) {
+        Sound sound = wand.getBreakSound();
+        if (sound == null) {
+            ComponentUtil.error("Break sound not configured for wand " + wand.getId() + ". Using default sound.");
+            player.playSound(player.getLocation(), Sound.ENTITY_ITEM_BREAK, 1.0f, 1.0f);
         }
+        else {
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        }
+        player.sendActionBar(wand.getBreakSoundMessage());
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -202,7 +225,7 @@ public class WandUseListener implements Listener {
         if (!WandManager.isWand(itemInHand)) {
             return;
         }
-        else if (!WandManager.isRegisteredWand(itemInHand)) {
+        if (!WandManager.isRegisteredWand(itemInHand)) {
             if (ConfigManager.shouldDestroyInvalidWands()) {
                 ComponentUtil.error("Removing misconfigured wand from their inventory...");
                 player.getInventory().removeItem(itemInHand);
@@ -225,7 +248,6 @@ public class WandUseListener implements Listener {
             return;
         }
         List<BlockState> lastAction = session.undoHistory.pop();
-        // todo: item return. to be moved to inventoryutil.
         List<ItemStack> itemsToReturn = new ArrayList<>();
         for (BlockState oldState : lastAction) {
             Block currentBlock = oldState.getBlock();
@@ -234,10 +256,9 @@ public class WandUseListener implements Listener {
             }
             oldState.update(true, false);
         }
-        if (!itemsToReturn.isEmpty() && !player.getGameMode().isInvulnerable()) {
-            player.give(itemsToReturn.toArray(new ItemStack[0]));
+        if (!itemsToReturn.isEmpty()) {
+            InventoryUtil.returnItems(player, itemsToReturn);
         }
-        // todo: item return. to be moved to inventoryutil.
         MessageManager.sendActionBar(player, MessageManager.Messages.ACTION_UNDONE, "remaining", session.undoHistory.size());
     }
 
@@ -336,29 +357,41 @@ public class WandUseListener implements Listener {
                     return;
                 }
                 World world = player.getWorld();
-                Particle particle;
-                try {
-                    particle = Particle.valueOf(wand.getPreviewParticle());
-                }
-                catch (Exception e) {
-                    particle = Particle.DUST;
-                }
-                Particle.DustOptions dustOptions = particle == Particle.DUST ? new Particle.DustOptions(Color.fromRGB(wand.getPreviewParticleOptionsRed(), wand.getPreviewParticleOptionsGreen(), wand.getPreviewParticleOptionsBlue()), (float) wand.getPreviewParticleOptionsSize()) : null;
+                Particle particle = tryParseParticle(wand.getPreviewParticle());
+                Particle.DustOptions dustOptions = particle == Particle.DUST ?
+                    new Particle.DustOptions(
+                        Color.fromRGB(wand.getPreviewParticleOptionsRed(), wand.getPreviewParticleOptionsGreen(), wand.getPreviewParticleOptionsBlue()),
+                        (float) wand.getPreviewParticleOptionsSize()
+                    ) : null;
+
                 for (Block preview : session.previewBlocks) {
                     if (!preview.getWorld().equals(world)) {
                         continue;
                     }
                     Location loc = preview.getLocation().add(0.5, 0.5, 0.5);
                     if (dustOptions != null) {
-                        world.spawnParticle(Particle.DUST, loc, wand.getPreviewParticleCount(), wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(), wand.getPreviewParticleSpeed(), dustOptions);
+                        world.spawnParticle(Particle.DUST, loc, wand.getPreviewParticleCount(),
+                            wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(),
+                            wand.getPreviewParticleSpeed(), dustOptions);
                     }
                     else {
-                        world.spawnParticle(particle, loc, wand.getPreviewParticleCount(), wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(), wand.getPreviewParticleSpeed());
+                        world.spawnParticle(particle, loc, wand.getPreviewParticleCount(),
+                            wand.getPreviewParticleOffsetX(), wand.getPreviewParticleOffsetY(), wand.getPreviewParticleOffsetZ(),
+                            wand.getPreviewParticleSpeed());
                     }
                 }
             }
         };
         session.particleTask.runTaskTimer(BuildersWand.getInstance(), 0L, 5L);
+    }
+
+    private Particle tryParseParticle(String particleName) {
+        try {
+            return Particle.valueOf(particleName);
+        }
+        catch (Exception e) {
+            return Particle.DUST;
+        }
     }
 
     public void unlockPlayer(Player player) {
