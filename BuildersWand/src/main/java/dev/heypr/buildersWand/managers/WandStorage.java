@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+// TODO FIX PAGINATION
 public class WandStorage implements InventoryHolder {
 
     private static final int PAGE_SIZE = 45;
@@ -55,8 +56,7 @@ public class WandStorage implements InventoryHolder {
     public void setItem(int index, ItemStack item) {
         if (item == null) {
             contentMap.remove(index);
-        }
-        else {
+        } else {
             contentMap.put(index, item);
         }
         updateInventorySlot(index, item);
@@ -99,19 +99,18 @@ public class WandStorage implements InventoryHolder {
 
     public int removeItems(Material material, int amount) {
         int removed = 0;
-        List<Integer> toDelete = new ArrayList<>();
         for (var entry : contentMap.entrySet()) {
             if (removed >= amount) break;
-            if (entry.getValue() instanceof ItemStack stack && stack.getType() == material) {
+            ItemStack stack = entry.getValue();
+            if (stack.getType().equals(material)) {
                 int take = Math.min(stack.getAmount(), amount - removed);
                 stack.setAmount(stack.getAmount() - take);
                 removed += take;
                 if (stack.getAmount() <= 0) {
-                    toDelete.add(entry.getKey());
+                    contentMap.remove(entry.getKey());
                 }
             }
         }
-        toDelete.forEach(contentMap::remove);
         return removed;
     }
 

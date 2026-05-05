@@ -23,8 +23,11 @@ public class WandStorageManager {
     private final BuildersWand plugin;
     private final WandStorageSerializer serializer = new WandStorageSerializer();
     private final ConcurrentHashMap<String, WandStorage> storage = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Boolean> dirtyMap = new ConcurrentHashMap<>();
     private final HikariDataSource dataSource;
     private BukkitTask autosaveTask;
+    private volatile boolean saving = false;
+    private volatile boolean shuttingDown = false;
 
     public WandStorageManager(BuildersWand plugin) {
         this.plugin = plugin;
@@ -38,12 +41,26 @@ public class WandStorageManager {
         this.dataSource = new HikariDataSource(config);
     }
 
+    public void init() {
+        createTables();
+        load();
+        startAutosave();
+    }
+
+    public void shutdown() {
+        shuttingDown = true;
+        stopAutosave();
+        waitForSaveCompletion();
+        flushDirtySync();
+        dataSource.close();
+    }
+
     public void createTables() {
         String sql = "CREATE TABLE IF NOT EXISTS wand_storage (wand_id TEXT PRIMARY KEY, content TEXT)";
-        try (Connection conn = dataSource.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.execute();
-        }
-        catch (SQLException e) {
+        } catch (SQLException e) {
             ComponentUtil.error("Failed to create tables: " + e.getMessage());
         }
     }
@@ -72,41 +89,99 @@ public class WandStorageManager {
         return wand == null ? null : storage.computeIfAbsent(wand.getId(), k -> new WandStorage(wand));
     }
 
-    public void save() {
+    public void save(Wand wand) {
+        if (shuttingDown) return;
+        dirtyMap.put(wand.getId(), true);
+    }
+
+    private void flushDirty() {
+        if (saving || dirtyMap.isEmpty()) return;
+
+        saving = true;
+
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("INSERT OR REPLACE INTO wand_storage (wand_id, content) VALUES (?, ?)")) {
-            for (Map.Entry<String, WandStorage> entry : storage.entrySet()) {
-                String json = serializer.serializeMap(entry.getValue().getAllContent());
-                stmt.setString(1, entry.getKey());
+             PreparedStatement stmt = conn.prepareStatement(
+                     "INSERT OR REPLACE INTO wand_storage (wand_id, content) VALUES (?, ?)")) {
+
+            for (String wandId : dirtyMap.keySet()) {
+                WandStorage ws = storage.get(wandId);
+                if (ws == null) continue;
+
+                String json = serializer.serializeMap(ws.getAllContent());
+
+                stmt.setString(1, wandId);
                 stmt.setString(2, json);
                 stmt.addBatch();
             }
+
             stmt.executeBatch();
+            dirtyMap.clear();
+
         }
         catch (SQLException e) {
-            ComponentUtil.error("Failed to save storage: " + e.getMessage());
+            ComponentUtil.error("Failed to flush dirty storage: " + e.getMessage());
+        }
+        finally {
+            saving = false;
+        }
+    }
+
+    private void flushDirtySync() {
+        if (dirtyMap.isEmpty()) return;
+
+        saving = true;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(
+                     "INSERT OR REPLACE INTO wand_storage (wand_id, content) VALUES (?, ?)")) {
+
+            for (String wandId : dirtyMap.keySet()) {
+                WandStorage ws = storage.get(wandId);
+                if (ws == null) continue;
+
+                String json = serializer.serializeMap(ws.getAllContent());
+
+                stmt.setString(1, wandId);
+                stmt.setString(2, json);
+                stmt.addBatch();
+            }
+
+            stmt.executeBatch();
+            dirtyMap.clear();
+
+        } catch (SQLException e) {
+            ComponentUtil.error("Failed to flush dirty storage (sync): " + e.getMessage());
+        } finally {
+            saving = false;
+        }
+    }
+
+    private void waitForSaveCompletion() {
+        while (saving) {
+            try {
+                Thread.sleep(5);
+            } catch (InterruptedException ignored) {
+            }
         }
     }
 
     public void startAutosave() {
-        if (!ConfigManager.isWandStorageAutosaveEnabled()) {
-            return;
-        }
+        if (!ConfigManager.isWandStorageAutosaveEnabled()) return;
+
         long interval = ConfigManager.getWandStorageAutosaveIntervalSeconds() * 20L;
-        autosaveTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::save, interval, interval);
+
+        autosaveTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(
+                plugin,
+                this::flushDirty,
+                interval,
+                interval
+        );
     }
 
     public void stopAutosave() {
         if (autosaveTask != null) {
             autosaveTask.cancel();
-        }
-    }
-
-    public void close() {
-        stopAutosave();
-        save();
-        if (dataSource != null) {
-            dataSource.close();
+            autosaveTask = null;
         }
     }
 

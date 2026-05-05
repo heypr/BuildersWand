@@ -69,16 +69,16 @@ public class WandUseListener implements Listener {
     public void onPlayerSwap(PlayerSwapHandItemsEvent event) {
         Player player = event.getPlayer();
         ItemStack wandItem = player.getInventory().getItemInMainHand();
-        if (!WandManager.isWand(wandItem)) {
-            return;
-        }
         if (!ConfigManager.isWandStorageEnabled()) {
             return;
         }
         event.setCancelled(true);
         Wand wand = WandManager.getWand(wandItem);
+        if (wand == null) {
+            return;
+        }
         WandStorage storage = BuildersWand.getStorageManager().getStorage(wand);
-        player.openInventory(storage.getInventory());
+        storage.open(player, 0);
     }
 
     @EventHandler(ignoreCancelled = true)

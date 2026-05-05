@@ -41,12 +41,10 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_MAX_SIZE = new NamespacedKey(instance, "builders_wand_max_size");
         recipeManager = new RecipeManager(instance);
         storageManager = new WandStorageManager(instance);
-        storageManager.createTables();
-        storageManager.load();
         wandManager.registerWands();
+        storageManager.init();
         MessageManager.initialize();
         ConfigManager.load();
-        storageManager.startAutosave();
         registerEvents();
         BuildersWandAPI.setInstance(new ApiImplementation(instance));
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -62,15 +60,7 @@ public class BuildersWand extends JavaPlugin {
     public void onDisable() {
         Updater.stop();
         if (storageManager != null) {
-            storageManager.stopAutosave();
-            try {
-                storageManager.save();
-            }
-            catch (Exception e) {
-                getLogger().severe("CRITICAL: Could not save wand data during shutdown!");
-                e.printStackTrace();
-            }
-            storageManager.close();
+            storageManager.shutdown();
         }
         ComponentUtil.log("BuildersWand disabled.");
     }
