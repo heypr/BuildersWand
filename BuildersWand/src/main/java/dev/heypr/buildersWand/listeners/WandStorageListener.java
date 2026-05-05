@@ -24,12 +24,17 @@ public class WandStorageListener implements Listener {
         if (!(event.getView().getTopInventory().getHolder() instanceof WandStorage storage)) return;
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
-        event.setCancelled(true);
         int slot = event.getRawSlot();
 
         switch (slot) {
-            case PREV_BUTTON -> storage.open(player, storage.getCurrentPage() - 1);
-            case NEXT_BUTTON -> storage.open(player, storage.getCurrentPage() + 1);
+            case PREV_BUTTON -> {
+                event.setCancelled(true);
+                storage.open(player, storage.getCurrentPage() - 1);
+            }
+            case NEXT_BUTTON -> {
+                event.setCancelled(true);
+                storage.open(player, storage.getCurrentPage() + 1);
+            }
             default -> {
                 if (slot >= 0 && slot < PAGE_SIZE) {
                     handleItemWithdraw(storage, player, event, slot);

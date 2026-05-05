@@ -1,6 +1,7 @@
 package dev.heypr.buildersWand.utility;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.managers.WandStorage;
 import dev.heypr.buildersWand.managers.WandStorageManager;
 import org.bukkit.Location;
@@ -14,7 +15,7 @@ import java.util.Map;
 
 public class InventoryUtil {
 
-    public static int getItemCount(Player player, Material material) {
+    public static int getItemCount(Player player, Material material, Wand wand) {
         int count = 0;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item != null && item.getType() == material) {
@@ -23,18 +24,17 @@ public class InventoryUtil {
         }
         WandStorageManager manager = BuildersWand.getStorageManager();
         if (manager != null) {
-            for (WandStorage storage : manager.getAllStorages()) {
-                for (ItemStack item : storage.getItems()) {
-                    if (item != null && item.getType() == material) {
-                        count += item.getAmount();
-                    }
+            WandStorage storage = manager.getStorage(wand);
+            for (ItemStack item : storage.getItems()) {
+                if (item != null && item.getType() == material) {
+                    count += item.getAmount();
                 }
             }
         }
         return count;
     }
 
-    public static void removeItems(Player player, Material material, int amount) {
+    public static void removeItems(Player player, Material material, int amount, Wand wand) {
         int remaining = amount;
         for (ItemStack item : player.getInventory().getContents()) {
             if (item == null || item.getType() != material) {
@@ -53,14 +53,14 @@ public class InventoryUtil {
         if (remaining <= 0) return;
         WandStorageManager manager = BuildersWand.getStorageManager();
         if (manager != null) {
-            for (WandStorage storage : manager.getAllStorages()) {
-                if (remaining <= 0) break;
-                remaining -= storage.removeItems(material, remaining);
+            WandStorage storage = manager.getStorage(wand);
+            if (storage.hasMaterial(material)) {
+                storage.removeItems(material, remaining);
             }
         }
     }
 
-    public static void returnItems(Player player, List<ItemStack> items) {
+    public static void returnItems(Player player, List<ItemStack> items, Wand wand) {
         if (items == null || items.isEmpty() || player.getGameMode().isInvulnerable()) {
             return;
         }
@@ -74,35 +74,24 @@ public class InventoryUtil {
             }
         }
         if (toDrop.isEmpty()) return;
-        tryAddToStorage(player, toDrop);
+        tryAddToStorage(player, toDrop, wand);
     }
 
-    private static void tryAddToStorage(Player player, List<ItemStack> items) {
+    private static void tryAddToStorage(Player player, List<ItemStack> items, Wand wand) {
         WandStorageManager manager = BuildersWand.getStorageManager();
         if (manager == null) {
             dropItems(player, items);
             return;
         }
 
-        List<ItemStack> notStored = new ArrayList<>();
         for (ItemStack item : items) {
             if (item == null || item.getType().isAir() || item.getAmount() <= 0) continue;
-            boolean stored = false;
-            for (WandStorage storage : manager.getAllStorages()) {
-                int maxIndex = storage.getAllContent().keySet().stream()
-                        .max(Integer::compareTo)
-                        .orElse(-1);
+            WandStorage storage = manager.getStorage(wand);
+            int maxIndex = storage.getAllContent().keySet().stream()
+                    .max(Integer::compareTo)
+                    .orElse(-1);
 
-                storage.setItem(maxIndex + 1, item.clone());
-                stored = true;
-                break;
-            }
-            if (!stored) {
-                notStored.add(item);
-            }
-        }
-        if (!notStored.isEmpty()) {
-            dropItems(player, notStored);
+            storage.setItem(maxIndex + 1, item.clone());
         }
     }
 

@@ -1,6 +1,8 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.api.Wand;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -124,7 +126,7 @@ public class WandStorage implements InventoryHolder {
     }
 
     private Inventory buildInventoryForPage(int page) {
-        Inventory inv = Bukkit.createInventory(this, INVENTORY_SIZE, String.format("Wand Storage - %s (%d)", wand.getId(), page + 1));
+        Inventory inv = Bukkit.createInventory(this, INVENTORY_SIZE, String.format("Wand Storage - %s (%d)", wand.getRawName(), page + 1));
         int startIndex = page * PAGE_SIZE;
         for (int i = 0; i < PAGE_SIZE; i++) {
             inv.setItem(i, contentMap.get(startIndex + i));
@@ -138,7 +140,7 @@ public class WandStorage implements InventoryHolder {
     private ItemStack createControl(Material material, String name) {
         ItemStack item = new ItemStack(material);
         if (item.getItemMeta() instanceof ItemMeta meta) {
-            meta.setDisplayName(name);
+            meta.customName(Component.text(name).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
             item.setItemMeta(meta);
         }
         return item;

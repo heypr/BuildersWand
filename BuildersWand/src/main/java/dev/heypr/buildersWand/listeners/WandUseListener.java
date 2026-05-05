@@ -134,7 +134,7 @@ public class WandUseListener implements Listener {
         }
         int needed = session.previewBlocks.size();
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
-            int available = InventoryUtil.getItemCount(player, session.lastTargetBlock.getType());
+            int available = InventoryUtil.getItemCount(player, session.lastTargetBlock.getType(), wand);
             if (available < needed) {
                 MessageManager.sendMessage(player, MessageManager.Messages.INSUFFICIENT_BLOCKS, "needed", needed - available, "material", session.lastTargetBlock.getType().name());
                 session.previewBlocks.clear();
@@ -167,7 +167,7 @@ public class WandUseListener implements Listener {
         }
         storeUndoHistory(wand, session, finalBlocksToPlace);
         if (!player.getGameMode().equals(GameMode.CREATIVE) && wand.consumesItems()) {
-            InventoryUtil.removeItems(player, session.lastTargetBlock.getType(), needed);
+            InventoryUtil.removeItems(player, session.lastTargetBlock.getType(), needed, wand);
         }
         placeBlocks(player, session, finalBlocksToPlace);
         handleDurability(player, wand, player.getInventory().getItemInMainHand());
@@ -275,7 +275,7 @@ public class WandUseListener implements Listener {
             oldState.update(true, false);
         }
         if (!itemsToReturn.isEmpty()) {
-            InventoryUtil.returnItems(player, itemsToReturn);
+            InventoryUtil.returnItems(player, itemsToReturn, wand);
         }
         MessageManager.sendActionBar(player, MessageManager.Messages.ACTION_UNDONE, "remaining", session.undoHistory.size());
     }

@@ -15,7 +15,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -90,19 +89,25 @@ public class WandStorageManager {
     }
 
     public void startAutosave() {
-        if (!ConfigManager.isWandStorageAutosaveEnabled()) return;
+        if (!ConfigManager.isWandStorageAutosaveEnabled()) {
+            return;
+        }
         long interval = ConfigManager.getWandStorageAutosaveIntervalSeconds() * 20L;
         autosaveTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::save, interval, interval);
     }
 
     public void stopAutosave() {
-        if (autosaveTask != null) autosaveTask.cancel();
+        if (autosaveTask != null) {
+            autosaveTask.cancel();
+        }
     }
 
     public void close() {
         stopAutosave();
         save();
-        if (dataSource != null) dataSource.close();
+        if (dataSource != null) {
+            dataSource.close();
+        }
     }
 
     public Collection<WandStorage> getAllStorages() {

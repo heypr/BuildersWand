@@ -62,7 +62,14 @@ public class BuildersWand extends JavaPlugin {
     public void onDisable() {
         Updater.stop();
         if (storageManager != null) {
-            storageManager.save();
+            storageManager.stopAutosave();
+            try {
+                storageManager.save();
+            }
+            catch (Exception e) {
+                getLogger().severe("CRITICAL: Could not save wand data during shutdown!");
+                e.printStackTrace();
+            }
             storageManager.close();
         }
         ComponentUtil.log("BuildersWand disabled.");
