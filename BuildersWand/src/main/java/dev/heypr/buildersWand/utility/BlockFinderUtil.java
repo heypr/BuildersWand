@@ -1,4 +1,4 @@
-package dev.heypr.buildersWand.managers;
+package dev.heypr.buildersWand.utility;
 
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -6,7 +6,7 @@ import org.bukkit.block.BlockFace;
 
 import java.util.*;
 
-public class BlockFinder {
+public class BlockFinderUtil {
     public static final Set<Material> REPLACEABLE = EnumSet.of(
             Material.AIR,
             Material.CAVE_AIR,

@@ -2,7 +2,7 @@ package dev.heypr.buildersWand;
 
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
@@ -28,7 +28,7 @@ public class Updater {
         long intervalTicks = intervalMinutes * 60L * 20L;
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> checkAndNotify(plugin));
         task = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> checkAndNotify(plugin), intervalTicks, intervalTicks);
-        Util.log("Updater started. Checking every " + intervalMinutes + " minutes.");
+        ComponentUtil.log("Updater started. Checking every " + intervalMinutes + " minutes.");
     }
 
     public static void stop() {
@@ -51,12 +51,12 @@ public class Updater {
                 Bukkit.getScheduler().runTask(plugin, () -> notifyUpdateAvailable(plugin, current, latest));
             }
             else {
-                Bukkit.getScheduler().runTask(plugin, () -> Util.log("Plugin is up to date!"));
+                Bukkit.getScheduler().runTask(plugin, () -> ComponentUtil.log("Plugin is up to date!"));
             }
         }
         catch (Exception e) {
-            Util.error("Updater error: " + e.getMessage());
-            Util.log("Updater exception: " + e);
+            ComponentUtil.error("Updater error: " + e.getMessage());
+            ComponentUtil.log("Updater exception: " + e);
         }
     }
 
@@ -120,7 +120,7 @@ public class Updater {
         boolean updateInGame = ConfigManager.notifyUpdateInGame();
         String consoleText = String.format("&aUpdate available! &c%s -> &a%s (https://www.spigotmc.org/resources/builderswand.125977)", current, latest);
         if (updateInConsole) {
-            Util.log(consoleText);
+            ComponentUtil.log(consoleText);
         }
         if (updateInGame) {
             String permission = "builderswand.update.notify";

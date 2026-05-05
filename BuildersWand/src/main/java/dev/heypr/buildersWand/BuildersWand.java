@@ -3,23 +3,29 @@ package dev.heypr.buildersWand;
 import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.commands.BuildersWandCommand;
 import dev.heypr.buildersWand.impl.ApiImplementation;
-import dev.heypr.buildersWand.listeners.WandListener;
+import dev.heypr.buildersWand.listeners.CraftListener;
+import dev.heypr.buildersWand.listeners.FurnaceListener;
+import dev.heypr.buildersWand.listeners.WandStorageListener;
+import dev.heypr.buildersWand.listeners.WandUseListener;
 import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
+import dev.heypr.buildersWand.managers.WandStorageManager;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.metrics.Metrics;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class BuildersWand extends JavaPlugin {
     private static final WandManager wandManager = new WandManager();
     private static RecipeManager recipeManager;
+    private static WandStorageManager storageManager;
     private static BuildersWand instance;
+
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
     public static NamespacedKey PDC_KEY_MAX_SIZE;
@@ -29,29 +35,45 @@ public class BuildersWand extends JavaPlugin {
     @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         instance = this;
-        PDC_KEY_ID = new NamespacedKey(this, "builders_wand_id");
-        PDC_KEY_DURABILITY = new NamespacedKey(this, "builders_wand_durability");
-        PDC_KEY_UUID = new NamespacedKey(this, "builders_wand_uuid");
-        PDC_KEY_MAX_SIZE = new NamespacedKey(this, "builders_wand_max_size");
-        recipeManager = new RecipeManager(this);
-        BuildersWand.getWandManager().registerWands();
+        PDC_KEY_ID = new NamespacedKey(instance, "builders_wand_id");
+        PDC_KEY_DURABILITY = new NamespacedKey(instance, "builders_wand_durability");
+        PDC_KEY_UUID = new NamespacedKey(instance, "builders_wand_uuid");
+        PDC_KEY_MAX_SIZE = new NamespacedKey(instance, "builders_wand_max_size");
+        recipeManager = new RecipeManager(instance);
+        storageManager = new WandStorageManager(instance);
+        wandManager.registerWands();
+        storageManager.init();
         MessageManager.initialize();
         ConfigManager.load();
-        BuildersWandAPI.setInstance(new ApiImplementation(this));
-        Bukkit.getPluginManager().registerEvents(new WandListener(), this);
+        registerEvents();
+        BuildersWandAPI.setInstance(new ApiImplementation(instance));
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
             new BuildersWandCommand().register(commands);
         });
-        new Metrics(this, 27729);
-        Updater.start(this);
-        Util.log("BuildersWand enabled!");
+        new Metrics(instance, 27729);
+        Updater.start(instance);
+        ComponentUtil.log("BuildersWand enabled!");
     }
 
     @Override
     public void onDisable() {
         Updater.stop();
-        Util.log("BuildersWand disabled.");
+        if (storageManager != null) {
+            storageManager.shutdown();
+        }
+        ComponentUtil.log("BuildersWand disabled.");
+    }
+
+    private void registerEvents() {
+        register(new WandUseListener());
+        register(new CraftListener());
+        register(new FurnaceListener());
+        register(new WandStorageListener());
+    }
+
+    private void register(Listener listener) {
+        instance.getServer().getPluginManager().registerEvents(listener, instance);
     }
 
     public static BuildersWand getInstance() {
@@ -66,19 +88,23 @@ public class BuildersWand extends JavaPlugin {
         return recipeManager;
     }
 
+    public static WandStorageManager getStorageManager() {
+        return storageManager;
+    }
+
     public static boolean isSuperiorSkyblockEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("SuperiorSkyblock2");
+        return instance.getServer().getPluginManager().isPluginEnabled("SuperiorSkyblock2");
     }
 
     public static boolean isBentoBoxEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("BentoBox");
+        return instance.getServer().getPluginManager().isPluginEnabled("BentoBox");
     }
 
     public static boolean isWorldGuardEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("WorldGuard");
+        return instance.getServer().getPluginManager().isPluginEnabled("WorldGuard");
     }
 
     public static boolean isLandsEnabled() {
-        return Bukkit.getPluginManager().isPluginEnabled("Lands");
+        return instance.getServer().getPluginManager().isPluginEnabled("Lands");
     }
 }
