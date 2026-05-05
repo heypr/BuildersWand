@@ -64,6 +64,12 @@ updater:
 # Only recommended when troubleshooting issues since it can generate a lot of log spam. defaults to false.
 debug: false
 
+wandStorage:
+  enabled: true
+  autosave:
+    enabled: true
+    intervalSeconds: 300
+
 wands:
   my_special_wand:
     name: "&3Builders Wand"

@@ -11,6 +11,7 @@ import dev.heypr.buildersWand.hooks.WorldGuardHook;
 import dev.heypr.buildersWand.managers.PlacementQueueManager;
 import dev.heypr.buildersWand.managers.WandManager;
 import dev.heypr.buildersWand.managers.WandSession;
+import dev.heypr.buildersWand.managers.WandStorage;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.utility.BlockFinderUtil;
@@ -26,6 +27,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -61,6 +63,22 @@ public class WandUseListener implements Listener {
         if (wand != null && wand.generatePreviewOnMove()) {
             generatePreview(player, wand);
         }
+    }
+
+    @EventHandler
+    public void onPlayerSwap(PlayerSwapHandItemsEvent event) {
+        Player player = event.getPlayer();
+        ItemStack wandItem = player.getInventory().getItemInMainHand();
+        if (!WandManager.isWand(wandItem)) {
+            return;
+        }
+        if (!ConfigManager.isWandStorageEnabled()) {
+            return;
+        }
+        event.setCancelled(true);
+        Wand wand = WandManager.getWand(wandItem);
+        WandStorage storage = BuildersWand.getStorageManager().getStorage(wand);
+        player.openInventory(storage.getInventory());
     }
 
     @EventHandler(ignoreCancelled = true)
