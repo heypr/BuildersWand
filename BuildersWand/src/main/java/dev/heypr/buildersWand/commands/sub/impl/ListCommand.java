@@ -3,6 +3,7 @@ package dev.heypr.buildersWand.commands.sub.impl;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
+import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.commands.sub.Subcommand;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
@@ -28,7 +29,7 @@ public class ListCommand implements Subcommand {
 
     private int execute(CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack source = ctx.getSource();
-        Collection<Wand> wands = ConfigManager.getAllWands();
+        Collection<Wand> wands = BuildersWand.getWandManager().registeredWands();
         if (wands.isEmpty()) {
             MessageManager.sendMessage(source.getSender(), MessageManager.Messages.NO_WANDS);
             return Command.SINGLE_SUCCESS;
