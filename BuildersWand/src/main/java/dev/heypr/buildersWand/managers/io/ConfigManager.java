@@ -43,9 +43,6 @@ public class ConfigManager {
         if (BuildersWand.getRecipeManager() != null) {
             BuildersWand.getRecipeManager().unregisterRecipes();
         }
-        wandConfigs.clear();
-        loadWandConfigs();
-        BuildersWand.getRecipeManager().registerRecipes();
         FileConfiguration config = plugin.getConfig();
         placementQueueEnabled = config.getBoolean("placementQueue.enabled", true);
         fireWandBlockPlaceEvent = config.getBoolean("fireWandBlockPlaceEvent", true);
@@ -64,7 +61,6 @@ public class ConfigManager {
      }
 
     public static List<Wand> loadWandConfigs() {
-        wandConfigs.clear();
         List<Wand> wandList = new ArrayList<>();
         FileConfiguration config = BuildersWand.getInstance().getConfig();
         ConfigurationSection wandsSection = config.getConfigurationSection("wands");
@@ -163,7 +159,6 @@ public class ConfigManager {
                         previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ, pSpeed,
                         pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
                         isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize, canBreakBlocksWhileCrouched);
-                wandConfigs.put(wandId, wand);
                 wandList.add(wand);
             }
             catch (Exception e) {
@@ -178,11 +173,8 @@ public class ConfigManager {
         plugin.reloadConfig();
         load();
         BuildersWand.getWandManager().registerWands();
+        BuildersWand.getRecipeManager().registerRecipes();
         Updater.start(plugin);
-    }
-
-    public static List<Wand> getAllWands() {
-        return new ArrayList<>(wandConfigs.values());
     }
 
     public static boolean isPlacementQueueEnabled() {

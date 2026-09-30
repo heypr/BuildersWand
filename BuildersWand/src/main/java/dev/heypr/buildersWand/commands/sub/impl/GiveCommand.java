@@ -7,6 +7,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.commands.sub.Subcommand;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
@@ -38,7 +39,7 @@ public class GiveCommand implements Subcommand {
     }
 
     private CompletableFuture<Suggestions> suggestWandIds(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
-        ConfigManager.getAllWands().forEach(w -> builder.suggest(w.getId()));
+        BuildersWand.getWandManager().registeredWands().forEach(w -> builder.suggest(w.getId()));
         return builder.buildFuture();
     }
 
