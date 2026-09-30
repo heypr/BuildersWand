@@ -3,6 +3,7 @@ package dev.heypr.buildersWand.managers;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.utility.ComponentUtil;
+import dev.heypr.buildersWand.utility.WandItemUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -23,7 +24,7 @@ public class RecipeManager {
         for (Wand wand : BuildersWand.getWandManager().registeredWands()) {
             if (wand.isCraftingRecipeEnabled()) {
                 NamespacedKey key = new NamespacedKey(plugin, "wand_recipe_" + wand.getId());
-                ItemStack result = WandManager.createWandItem(wand);
+                ItemStack result = WandItemUtil.createWandItem(wand);
                 ShapedRecipe recipe = new ShapedRecipe(key, result);
                 recipe.shape(wand.getRecipeShape().toArray(new String[0]));
                 for (Map.Entry<Character, Material> entry : wand.getRecipeIngredients().entrySet()) {

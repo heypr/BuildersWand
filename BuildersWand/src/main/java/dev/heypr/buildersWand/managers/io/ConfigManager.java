@@ -4,6 +4,7 @@ import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.utility.ComponentUtil;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -16,7 +17,6 @@ import java.util.Map;
 
 public class ConfigManager {
     private static final String CURRENT_VERSION = "1.6.0";
-    private static final Map<String, Wand> wandConfigs = new HashMap<>();
     private static boolean placementQueueEnabled;
     private static boolean fireWandBlockPlaceEvent;
     private static boolean fireWandPreviewEvent;
@@ -30,6 +30,7 @@ public class ConfigManager {
     private static boolean wandStorageEnabled;
     private static boolean wandStorageAutosaveEnabled;
     private static long wandStorageAutosaveIntervalSeconds;
+    private static int pruneStaleAfterDays;
 
     public static void load() {
         BuildersWand plugin = BuildersWand.getInstance();
@@ -52,13 +53,14 @@ public class ConfigManager {
         debugModeEnabled = config.getBoolean("debug", false);
         updaterEnabled = config.getBoolean("updater.enabled", true);
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
-         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
-         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-         wandStorageEnabled = config.getBoolean("wandStorage.enabled", true);
-         wandStorageAutosaveEnabled = config.getBoolean("wandStorage.autosave.enabled", true);
-         wandStorageAutosaveIntervalSeconds = config.getLong("wandStorage.autosave.intervalSeconds", 300L);
-         ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
-     }
+        updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
+        updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
+        wandStorageEnabled = config.getBoolean("wandStorage.enabled", true);
+        wandStorageAutosaveEnabled = config.getBoolean("wandStorage.autosave.enabled", true);
+        wandStorageAutosaveIntervalSeconds = config.getLong("wandStorage.autosave.intervalSeconds", 300L);
+        pruneStaleAfterDays = config.getInt("wandStorage.pruneStaleAfterDays", 30);
+        ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
+    }
 
     public static List<Wand> loadWandConfigs() {
         List<Wand> wandList = new ArrayList<>();
@@ -153,12 +155,40 @@ public class ConfigManager {
                         }
                     }
                 }
-                Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, wandType, staticLength,
-                        staticWidth, maxSize, maxSizeText, maxRayTraceDistance, consumeItems, generatePreviewOnMove,
-                        durabilityAmount, durabilityEnabled, durabilityText, breakSoundEnabled, breakSound, breakSoundMessage,
-                        previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ, pSpeed,
-                        pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
-                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize, canBreakBlocksWhileCrouched);
+                Wand wand = Wand.builder(wandId)
+                        .setName(wandName)
+                        .setMaterial(wandMaterial)
+                        .setLore(wandLore)
+                        .setWandType(wandType)
+                        .setStaticLength(staticLength)
+                        .setStaticWidth(staticWidth)
+                        .setMaxSize(maxSize)
+                        .setMaxSizeText(maxSizeText)
+                        .setMaxRayTraceDistance(maxRayTraceDistance)
+                        .setConsumesItems(consumeItems)
+                        .setGeneratePreviewOnMove(generatePreviewOnMove)
+                        .setDurabilityAmount(durabilityAmount)
+                        .setDurabilityEnabled(durabilityEnabled)
+                        .setDurabilityText(durabilityText)
+                        .setBreakSoundEnabled(breakSoundEnabled)
+                        .setBreakSound(breakSound)
+                        .setBreakSoundMessage(breakSoundMessage)
+                        .setPreviewParticle(previewParticle)
+                        .setPreviewParticleCount(previewParticleCount)
+                        .setPreviewParticleOffsetX(pOffsetX)
+                        .setPreviewParticleOffsetY(pOffsetY)
+                        .setPreviewParticleOffsetZ(pOffsetZ)
+                        .setPreviewParticleSpeed(pSpeed)
+                        .setPreviewParticleColor(Color.fromRGB(pRed, pGreen, pBlue))
+                        .setPreviewParticleOptionsSize(pSize)
+                        .setCooldown(cooldown)
+                        .setBlockedMaterials(blockedMaterials)
+                        .setCraftable(isCraftable)
+                        .setCraftingRecipeEnabled(craftingRecipeEnabled)
+                        .setRecipeShape(recipeShape)
+                        .setRecipeIngredients(recipeIngredients)
+                        .setUndoHistorySize(undoHistorySize)
+                        .setCanBreakBlocksWhileCrouched(canBreakBlocksWhileCrouched).build();
                 wandList.add(wand);
             }
             catch (Exception e) {
@@ -227,5 +257,9 @@ public class ConfigManager {
 
     public static long getWandStorageAutosaveIntervalSeconds() {
         return wandStorageAutosaveIntervalSeconds;
+    }
+
+    public static int getPruneStaleAfterDays() {
+        return pruneStaleAfterDays;
     }
 }

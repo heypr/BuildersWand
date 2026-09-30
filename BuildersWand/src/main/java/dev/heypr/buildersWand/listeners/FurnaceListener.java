@@ -1,6 +1,6 @@
 package dev.heypr.buildersWand.listeners;
 
-import dev.heypr.buildersWand.managers.WandManager;
+import dev.heypr.buildersWand.utility.WandItemUtil;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.FurnaceBurnEvent;
@@ -12,7 +12,7 @@ public class FurnaceListener implements Listener {
     @EventHandler
     public void onFurnaceBurn(FurnaceBurnEvent event) {
         ItemStack item = event.getFuel();
-        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
+        if (WandItemUtil.isNonCraftableWand(item)) {
             event.setConsumeFuel(false);
             event.setCancelled(true);
         }
@@ -21,7 +21,7 @@ public class FurnaceListener implements Listener {
     @EventHandler
     public void onFurnaceSmelt(FurnaceSmeltEvent event) {
         ItemStack item = event.getResult();
-        if (WandManager.isWand(item) && !WandManager.getWand(item).isCraftable()) {
+        if (WandItemUtil.isNonCraftableWand(item)) {
             event.setCancelled(true);
         }
     }

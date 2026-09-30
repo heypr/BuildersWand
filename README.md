@@ -6,6 +6,8 @@ Relevant commands:
 - `/builderswand reload` (Alias: `/bw reload`) » Reloads wands from the configuration file into memory.
 - `/builderswand list` (Alias: `/bw list`) » Lists all wands currently configured in the plugin.
 - `/builderswand give <wand> <player>` (Alias: `/bw give`) » Gives the specified player the specified wand.
+- `/builderswand prune `
+- `/builderswand storage `
 
 Relevant permissions:
 - `builderswand.admin` » Grants access to all admin commands and permissions.
@@ -69,6 +71,11 @@ wandStorage:
   autosave:
     enabled: true
     intervalSeconds: 300
+  # used by /bw prune. a storage file is only ever auto-deleted if, and only if, it is both empty
+  # and hasn't been touched in at least this many days, it never touches storages that
+  # still have items in them, those are only reported for manual reveiw.
+  prune:
+    staleAfterDays: 30
 
 wands:
   my_special_wand:
@@ -87,6 +94,9 @@ wands:
     generatePreviewOnMove: false # whether to generate a preview (small white particles) of where blocks will be placed when the player moves.
     undoHistorySize: 10 # number of undoes to store per player for this wand, defaults to 10. shift left click to undo a placement, input - 1 for unlimited and 0 to disable undoing.
     canBreakBlocksWhileCrouched: false # whether you break blocks while crouching. defaults to false, preventing accidental sensitive block breaking.
+    storageInventory:
+      minimumLines: 1   # minimum number of scrollable lines (1 line = 7 slots)
+      maximumLines: 10  # maximum number of scrollable lines
     durability:
       amount: 100
       enabled: true
@@ -133,7 +143,7 @@ wands:
 
 # DO NOT EDIT THIS LINE!!!
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
-config-version: 1.5.0
+config-version: 1.6.0
 
 prefix: "&7[&bBuildersWand&7] &r"
 

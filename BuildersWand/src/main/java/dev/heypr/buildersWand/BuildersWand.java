@@ -2,10 +2,10 @@ package dev.heypr.buildersWand;
 
 import dev.heypr.buildersWand.api.BuildersWandAPI;
 import dev.heypr.buildersWand.commands.BuildersWandCommand;
+import dev.heypr.buildersWand.gui.WandStorageGuiListener;
 import dev.heypr.buildersWand.impl.ApiImplementation;
 import dev.heypr.buildersWand.listeners.CraftListener;
 import dev.heypr.buildersWand.listeners.FurnaceListener;
-import dev.heypr.buildersWand.listeners.WandStorageListener;
 import dev.heypr.buildersWand.listeners.WandUseListener;
 import dev.heypr.buildersWand.managers.RecipeManager;
 import dev.heypr.buildersWand.managers.WandManager;
@@ -20,19 +20,19 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
+@SuppressWarnings("UnstableApiUsage")
 public class BuildersWand extends JavaPlugin {
     private static final WandManager wandManager = new WandManager();
     private static RecipeManager recipeManager;
     private static WandStorageManager storageManager;
     private static BuildersWand instance;
-
+    private static boolean wandStorageAvailable = true;
     public static NamespacedKey PDC_KEY_ID;
     public static NamespacedKey PDC_KEY_DURABILITY;
     public static NamespacedKey PDC_KEY_MAX_SIZE;
     public static NamespacedKey PDC_KEY_UUID;
 
     @Override
-    @SuppressWarnings("UnstableApiUsage")
     public void onEnable() {
         instance = this;
         PDC_KEY_ID = new NamespacedKey(instance, "builders_wand_id");
@@ -40,12 +40,21 @@ public class BuildersWand extends JavaPlugin {
         PDC_KEY_UUID = new NamespacedKey(instance, "builders_wand_uuid");
         PDC_KEY_MAX_SIZE = new NamespacedKey(instance, "builders_wand_max_size");
         recipeManager = new RecipeManager(instance);
-        storageManager = new WandStorageManager(instance);
         wandManager.registerWands();
-        storageManager.init();
         MessageManager.initialize();
         ConfigManager.load();
-        registerEvents();
+        if (!ConfigManager.isWandStorageEnabled()) {
+            wandStorageAvailable = false;
+        }
+        if (wandStorageAvailable) {
+            storageManager = new WandStorageManager(instance);
+            storageManager.init();
+            ComponentUtil.debug("Wand storage initialized.");
+        }
+        register(new WandUseListener());
+        register(new CraftListener());
+        register(new FurnaceListener());
+        register(new WandStorageGuiListener());
         BuildersWandAPI.setInstance(new ApiImplementation(instance));
         this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             final Commands commands = event.registrar();
@@ -53,6 +62,7 @@ public class BuildersWand extends JavaPlugin {
         });
         new Metrics(instance, 27729);
         Updater.start(instance);
+        ConfigManager.reload();
         ComponentUtil.log("BuildersWand enabled!");
     }
 
@@ -63,13 +73,6 @@ public class BuildersWand extends JavaPlugin {
             storageManager.shutdown();
         }
         ComponentUtil.log("BuildersWand disabled.");
-    }
-
-    private void registerEvents() {
-        register(new WandUseListener());
-        register(new CraftListener());
-        register(new FurnaceListener());
-        register(new WandStorageListener());
     }
 
     private void register(Listener listener) {
@@ -90,6 +93,10 @@ public class BuildersWand extends JavaPlugin {
 
     public static WandStorageManager getStorageManager() {
         return storageManager;
+    }
+
+    public static boolean isWandStorageAvailable() {
+        return wandStorageAvailable;
     }
 
     public static boolean isSuperiorSkyblockEnabled() {

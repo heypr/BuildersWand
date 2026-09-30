@@ -1,12 +1,16 @@
 package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
+import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.listeners.WandUseListener;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.utility.BlockFinderUtil;
+import dev.heypr.buildersWand.utility.BlockPlacementUtil;
+import dev.heypr.buildersWand.utility.InventoryUtil;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.LinkedList;
@@ -18,10 +22,12 @@ public class PlacementQueueManager {
     private final int size;
     private final BukkitRunnable task;
 
-    public PlacementQueueManager(Player player, Set<Block> blocks, Material material, int maxPerTick) {
+    public PlacementQueueManager(Player player, Set<Block> blocks, Material material, int maxPerTick, Block targetBlock, boolean fireEvents, Wand wand, ItemStack wandItem) {
         this.blocksToPlace.addAll(blocks);
         this.size = blocksToPlace.size();
         this.task = new BukkitRunnable() {
+            private int skipped = 0;
+
             @Override
             public void run() {
                 if (player == null || !player.isOnline()) {
@@ -33,8 +39,12 @@ public class PlacementQueueManager {
                     Block block = blocksToPlace.poll();
                     if (block == null) continue;
                     if (!block.getType().isAir() && !isReplaceable(block.getType())) continue;
-                    block.setType(material, true);
-                    placed++;
+                    if (BlockPlacementUtil.place(block, material, targetBlock, player, fireEvents)) {
+                        placed++;
+                    }
+                    else {
+                        skipped++;
+                    }
                 }
                 int remaining = blocksToPlace.size();
                 if (remaining > 0 && remaining < 50) {
@@ -43,6 +53,9 @@ public class PlacementQueueManager {
                 if (blocksToPlace.isEmpty()) {
                     if (size > 50) {
                         MessageManager.sendMessage(player, MessageManager.Messages.PLACEMENT_COMPLETE);
+                    }
+                    if (skipped > 0 && wand.consumesItems()) {
+                        InventoryUtil.returnItems(player, material, skipped, wand, wandItem);
                     }
                     WandUseListener.getInstance().unlockPlayer(player);
                     this.cancel();

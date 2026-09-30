@@ -5,12 +5,26 @@ author: heypr
 main: dev.heypr.buildersWand.BuildersWand
 api-version: '1.21'
 prefix: BuildersWand
-load: POSTWORLD
-softdepend:
-  - SuperiorSkyblock2
-  - WorldGuard
-  - Lands
-  - BentoBox
+
+dependencies:
+  server:
+    SuperiorSkyblock2:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    WorldGuard:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    Lands:
+      load: BEFORE
+      required: false
+      join-classpath: true
+    BentoBox:
+      load: BEFORE
+      required: false
+      join-classpath: true
+
 permissions:
   builderswand.admin:
     description: Master permission for BuildersWand
@@ -26,6 +40,15 @@ permissions:
     default: op
   builderswand.list:
     description: Allows listing wands
+    default: op
+  builderswand.storage.list:
+    description: Allows viewing wand storage disk usage summary
+    default: op
+  builderswand.storage.inspect:
+    description: Allows viewing and editing a specific wand's storage contents by UUID
+    default: op
+  builderswand.storage.prune:
+    description: Allows pruning stale wand storage files
     default: op
   builderswand.use.*:
     description: Allows using all wands

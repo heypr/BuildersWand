@@ -6,6 +6,7 @@ import dev.heypr.buildersWand.commands.sub.Subcommand;
 import dev.heypr.buildersWand.commands.sub.impl.GiveCommand;
 import dev.heypr.buildersWand.commands.sub.impl.ListCommand;
 import dev.heypr.buildersWand.commands.sub.impl.ReloadCommand;
+import dev.heypr.buildersWand.commands.sub.impl.StorageCommand;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -17,7 +18,8 @@ public class BuildersWandCommand {
     private final List<Subcommand> subcommands = List.of(
             new ReloadCommand(),
             new ListCommand(),
-            new GiveCommand()
+            new GiveCommand(),
+            new StorageCommand()
     );
 
     public void register(Commands commands) {

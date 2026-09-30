@@ -40,6 +40,11 @@ wandStorage:
   autosave:
     enabled: true
     intervalSeconds: 300
+  # used by /bw prune. a storage file is only ever auto-deleted if, and only if, it is both empty
+  # and hasn't been touched in at least this many days, it never touches storages that
+  # still have items in them, those are only reported for manual reveiw.
+  prune:
+    staleAfterDays: 30
 
 wands:
   my_special_wand:
@@ -58,6 +63,9 @@ wands:
     generatePreviewOnMove: false # whether to generate a preview (small white particles) of where blocks will be placed when the player moves.
     undoHistorySize: 10 # number of undoes to store per player for this wand, defaults to 10. shift left click to undo a placement, input - 1 for unlimited and 0 to disable undoing.
     canBreakBlocksWhileCrouched: false # whether you break blocks while crouching. defaults to false, preventing accidental sensitive block breaking.
+    storageInventory:
+      minimumLines: 1   # minimum number of scrollable lines (1 line = 7 slots)
+      maximumLines: 10  # maximum number of scrollable lines
     durability:
       amount: 100
       enabled: true

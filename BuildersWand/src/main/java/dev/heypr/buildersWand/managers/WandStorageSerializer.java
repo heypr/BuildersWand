@@ -1,50 +1,61 @@
 package dev.heypr.buildersWand.managers;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
 import dev.heypr.buildersWand.utility.ComponentUtil;
-import org.apache.commons.codec.binary.Base64;
 import org.bukkit.inventory.ItemStack;
 
-import java.lang.reflect.Type;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
 public class WandStorageSerializer {
 
-    private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-
-    public String serializeMap(Map<Integer, ItemStack> content) {
-        HashMap<Integer, String> encodedMap = new HashMap<>();
-        for (Map.Entry<Integer, ItemStack> entry : content.entrySet()) {
-            if (entry.getValue() == null || entry.getValue().getType().isAir()) continue;
-            try {
-                byte[] serialized = entry.getValue().serializeAsBytes();
-                encodedMap.put(entry.getKey(), Base64.encodeBase64String(serialized));
+    public byte[] serialize(Map<Integer, ItemStack> content) {
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        try (DataOutputStream out = new DataOutputStream(buffer)) {
+            Map<Integer, byte[]> encoded = new HashMap<>();
+            for (Map.Entry<Integer, ItemStack> entry : content.entrySet()) {
+                ItemStack item = entry.getValue();
+                if (item == null || item.getType().isAir()) continue;
+                try {
+                    encoded.put(entry.getKey(), item.serializeAsBytes());
+                }
+                catch (Exception exception) {
+                    ComponentUtil.error("Failed to serialize item in slot " + entry.getKey() + ": " + exception.getMessage());
+                }
             }
-            catch (Exception e) {
-                ComponentUtil.error("Failed to serialize item in slot " + entry.getKey() + ": " + e.getMessage());
+            out.writeInt(encoded.size());
+            for (Map.Entry<Integer, byte[]> entry : encoded.entrySet()) {
+                out.writeInt(entry.getKey());
+                out.writeInt(entry.getValue().length);
+                out.write(entry.getValue());
             }
         }
-        return gson.toJson(encodedMap);
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to serialize wand storage: " + exception.getMessage());
+        }
+        return buffer.toByteArray();
     }
 
-    public Map<Integer, ItemStack> deserializeMap(String json) {
-        HashMap<Integer, ItemStack> loadedItems = new HashMap<>();
-        try {
-            Type hashMapType = new TypeToken<HashMap<Integer, String>>() {}.getType();
-            HashMap<Integer, String> map = gson.fromJson(json, hashMapType);
-            if (map == null) return loadedItems;
-            for (Map.Entry<Integer, String> entry : map.entrySet()) {
-                byte[] decoded = Base64.decodeBase64(entry.getValue());
-                ItemStack deserialized = ItemStack.deserializeBytes(decoded);
-                loadedItems.put(entry.getKey(), deserialized);
+    public Map<Integer, ItemStack> deserialize(byte[] data) {
+        Map<Integer, ItemStack> result = new HashMap<>();
+        if (data == null || data.length == 0) return result;
+        try (DataInputStream in = new DataInputStream(new ByteArrayInputStream(data))) {
+            int count = in.readInt();
+            for (int i = 0; i < count; i++) {
+                int slot = in.readInt();
+                int length = in.readInt();
+                byte[] itemBytes = in.readNBytes(length);
+                try {
+                    result.put(slot, ItemStack.deserializeBytes(itemBytes));
+                }
+                catch (Exception exception) {
+                    ComponentUtil.error("Failed to deserialize item in slot " + slot + ": " + exception.getMessage());
+                }
             }
         }
-        catch (Exception e) {
-            ComponentUtil.error("An error occurred while deserializing wand storage: " + e.getMessage());
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to deserialize wand storage: " + exception.getMessage());
         }
-        return loadedItems;
+        return result;
     }
 }

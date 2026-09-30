@@ -1,147 +1,183 @@
 package dev.heypr.buildersWand.managers;
 
+import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
+import dev.heypr.buildersWand.gui.WandStorageGui;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-// TODO FIX PAGINATION
-public class WandStorage implements InventoryHolder {
+public class WandStorage {
+    private static final int SLOTS_PER_LINE = 7;
+    private final String wandTypeId;
+    private final String wandItemUUID;
+    private final Map<Integer, ItemStack> content = new ConcurrentHashMap<>();
 
-    private static final int PAGE_SIZE = 45;
-    private static final int INVENTORY_SIZE = 54;
-
-    private final Wand wand;
-    private final ConcurrentHashMap<Integer, ItemStack> contentMap = new ConcurrentHashMap<>();
-    private int currentPage = 0;
-    private Inventory inventory;
-
-    public WandStorage(Wand wand) {
-        this.wand = wand;
-        this.inventory = buildInventoryForPage(0);
+    public WandStorage(String wandTypeId, String wandItemUUID) {
+        this.wandTypeId = wandTypeId;
+        this.wandItemUUID = wandItemUUID;
     }
 
-    @Override
-    @NotNull
-    public Inventory getInventory() {
-        return inventory;
+    public String getWandTypeId() {
+        return wandTypeId;
     }
 
-    public Wand getWand() {
-        return wand;
+    public String getWandItemUUID() {
+        return wandItemUUID;
+    }
+
+    public Map<Integer, ItemStack> getContent() {
+        return Collections.unmodifiableMap(content);
+    }
+
+    public Map<Integer, ItemStack> getContentCopy() {
+        Map<Integer, ItemStack> copy = new HashMap<>();
+        content.forEach((slot, item) -> {
+            if (item != null) {
+                copy.put(slot, item.clone());
+            }
+        });
+        return copy;
     }
 
     public ItemStack getItem(int index) {
-        return contentMap.get(index);
-    }
-
-    public Collection<ItemStack> getItems() {
-        return contentMap.values();
-    }
-
-    public Map<Integer, ItemStack> getAllContent() {
-        return Collections.unmodifiableMap(contentMap);
+        ItemStack item = content.get(index);
+        return item != null ? item.clone() : null;
     }
 
     public void setItem(int index, ItemStack item) {
-        if (item == null) {
-            contentMap.remove(index);
-        } else {
-            contentMap.put(index, item);
+        if (item == null || item.getType().isAir() || item.getAmount() == 0) {
+            content.remove(index);
         }
-        updateInventorySlot(index, item);
-    }
-
-    public void removeItem(int index) {
-        contentMap.remove(index);
-        updateInventorySlot(index, null);
-    }
-
-    public boolean hasItem(ItemStack item) {
-        return contentMap.containsValue(item);
+        else {
+            content.put(index, item.clone());
+        }
     }
 
     public boolean hasMaterial(Material material) {
-        return contentMap.values().parallelStream().anyMatch(item -> item != null && item.getType() == material);
+        return content.values().stream().anyMatch(item -> item != null && item.getType() == material);
     }
 
-    public int itemCount() {
-        return contentMap.values().parallelStream().mapToInt(item -> item != null ? item.getAmount() : 0).sum();
+    public int getCount(Material material) {
+        return content.values().stream().filter(item -> item != null && item.getType() == material).mapToInt(ItemStack::getAmount).sum();
     }
 
-    public int getTotalPages() {
-        return contentMap.keySet().stream()
-                .max(Integer::compareTo)
-                .map(maxIndex -> (maxIndex + PAGE_SIZE) / PAGE_SIZE)
-                .orElse(1);
-    }
-
-    public void open(Player player, int page) {
-        int totalPages = getTotalPages();
-        currentPage = Math.clamp(page, 0, totalPages - 1);
-        inventory = buildInventoryForPage(currentPage);
-        player.openInventory(inventory);
-    }
-
-    public int getCurrentPage() {
-        return currentPage;
-    }
-
-    public int removeItems(Material material, int amount) {
-        int removed = 0;
-        for (var entry : contentMap.entrySet()) {
-            if (removed >= amount) break;
-            ItemStack stack = entry.getValue();
-            if (stack.getType().equals(material)) {
-                int take = Math.min(stack.getAmount(), amount - removed);
-                stack.setAmount(stack.getAmount() - take);
-                removed += take;
-                if (stack.getAmount() <= 0) {
-                    contentMap.remove(entry.getKey());
-                }
+    public void removeItems(Material material, int amount) {
+        int remaining = amount;
+        List<Integer> sortedSlots = new ArrayList<>(content.keySet());
+        Collections.sort(sortedSlots);
+        for (int slot : sortedSlots) {
+            if (remaining <= 0) break;
+            ItemStack item = content.get(slot);
+            if (item == null || item.getType() != material) continue;
+            int quantity = item.getAmount();
+            if (quantity <= remaining) {
+                remaining -= quantity;
+                content.remove(slot);
+            }
+            else {
+                item.setAmount(quantity - remaining);
+                remaining = 0;
             }
         }
-        return removed;
     }
 
-    private void updateInventorySlot(int index, ItemStack item) {
-        if (isIndexVisible(index)) {
-            inventory.setItem(index % PAGE_SIZE, item);
+    public int addItems(ItemStack... itemsToAdd) {
+        int overflow = 0;
+        for (ItemStack itemToAdd : itemsToAdd) {
+            if (itemToAdd == null || itemToAdd.getType().isAir() || itemToAdd.getAmount() <= 0) continue;
+            int remaining = itemToAdd.getAmount();
+            Material material = itemToAdd.getType();
+            for (Map.Entry<Integer, ItemStack> entry : content.entrySet()) {
+                if (remaining <= 0) break;
+                ItemStack existing = entry.getValue();
+                if (existing == null || existing.getType() != material) continue;
+                if (!itemsEqualForStacking(existing, itemToAdd)) continue;
+                int canAdd = existing.getMaxStackSize() - existing.getAmount();
+                if (canAdd <= 0) continue;
+                int toAdd = Math.min(canAdd, remaining);
+                existing.setAmount(existing.getAmount() + toAdd);
+                remaining -= toAdd;
+            }
+            if (remaining > 0) {
+                int nextSlot = findNextEmptySlot();
+                if (nextSlot >= 0) {
+                    ItemStack newStack = itemToAdd.clone();
+                    newStack.setAmount(Math.min(remaining, newStack.getMaxStackSize()));
+                    content.put(nextSlot, newStack);
+                    remaining -= newStack.getAmount();
+                }
+            }
+            overflow += remaining;
         }
+        return overflow;
     }
 
-    private boolean isIndexVisible(int index) {
-        return (index / PAGE_SIZE) == currentPage;
-    }
-
-    private Inventory buildInventoryForPage(int page) {
-        Inventory inv = Bukkit.createInventory(this, INVENTORY_SIZE, String.format("Wand Storage - %s (%d)", wand.getRawName(), page + 1));
-        int startIndex = page * PAGE_SIZE;
-        for (int i = 0; i < PAGE_SIZE; i++) {
-            inv.setItem(i, contentMap.get(startIndex + i));
+    public void open(Player player) {
+        Wand wand = WandManager.getWandConfig(wandTypeId);
+        if (wand == null) {
+            return;
         }
-        inv.setItem(45, createControl(Material.ARROW, "Previous Page"));
-        inv.setItem(49, createControl(Material.PAPER, String.format("Page: %d", page + 1)));
-        inv.setItem(53, createControl(Material.ARROW, "Next Page"));
-        return inv;
+        Component title = wand.getName().append(Component.text(" Storage"));
+        openInternal(player, title, wand.getStorageMaxLines() * SLOTS_PER_LINE);
     }
 
-    private ItemStack createControl(Material material, String name) {
-        ItemStack item = new ItemStack(material);
-        if (item.getItemMeta() instanceof ItemMeta meta) {
-            meta.customName(Component.text(name).decorationIfAbsent(TextDecoration.ITALIC, TextDecoration.State.FALSE));
-            item.setItemMeta(meta);
+    public void openForAdmin(Player admin) {
+        Wand wand = WandManager.getWandConfig(wandTypeId);
+        if (wand != null) {
+            Component title = wand.getName().append(Component.text(" Storage"));
+            openInternal(admin, title, wand.getStorageMaxLines() * SLOTS_PER_LINE);
+            return;
         }
-        return item;
+        int usedLines = content.isEmpty() ? 1 : (int) Math.ceil((content.keySet().stream().max(Integer::compareTo).orElse(0) + 1) / (double) SLOTS_PER_LINE);
+        Component title = Component.text("Unknown wand type '" + wandTypeId + "' Storage");
+        openInternal(admin, title, Math.max(1, usedLines) * SLOTS_PER_LINE);
+    }
+
+    private void openInternal(Player player, Component title, int storageSize) {
+        Map<Integer, ItemStack> mutableContents = getContentCopy();
+        WandStorageGui.open(player, title, storageSize, mutableContents, WandStorage::isAllowed, () -> {
+            content.clear();
+            mutableContents.forEach((slot, item) -> {
+                if (item != null && !item.getType().isAir() && item.getAmount() > 0) {
+                    content.put(slot, item.clone());
+                }
+            });
+            WandStorageManager manager = BuildersWand.getStorageManager();
+            if (manager != null) {
+                manager.saveNow(wandItemUUID);
+            }
+        });
+    }
+
+    private int findNextEmptySlot() {
+        int maxSlot = content.keySet().stream().max(Integer::compareTo).orElse(-1);
+        for (int i = 0; i <= maxSlot + 1; i++) {
+            if (!content.containsKey(i)) {
+                return i;
+            }
+        }
+        return maxSlot + 1;
+    }
+
+    private static boolean itemsEqualForStacking(ItemStack a, ItemStack b) {
+        return a.getType() == b.getType();
+    }
+
+    static boolean isAllowed(ItemStack item) {
+        if (item == null || item.getType().isAir()) return false;
+        if (!item.getType().isBlock() || !item.getType().isItem()) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null) return true;
+        if (meta.hasDisplayName()) return false;
+        if (meta.hasLore()) return false;
+        if (meta.hasEnchants()) return false;
+        if (meta.hasCustomModelData()) return false;
+        return meta.getPersistentDataContainer().isEmpty();
     }
 }

@@ -1,49 +1,50 @@
 package dev.heypr.buildersWand.managers;
 
-import com.zaxxer.hikari.HikariConfig;
-import com.zaxxer.hikari.HikariDataSource;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.utility.ComponentUtil;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.io.File;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Map;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 public class WandStorageManager {
 
+    private static final String FILE_SUFFIX = ".dat";
+
     private final BuildersWand plugin;
     private final WandStorageSerializer serializer = new WandStorageSerializer();
+    private final Path storageFolder;
     private final ConcurrentHashMap<String, WandStorage> storage = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Boolean> dirtyMap = new ConcurrentHashMap<>();
-    private final HikariDataSource dataSource;
     private BukkitTask autosaveTask;
     private volatile boolean saving = false;
     private volatile boolean shuttingDown = false;
 
     public WandStorageManager(BuildersWand plugin) {
         this.plugin = plugin;
-        File dataFolder = plugin.getDataFolder();
-        if (!dataFolder.exists()) dataFolder.mkdirs();
-        HikariConfig config = new HikariConfig();
-        config.setJdbcUrl("jdbc:sqlite:" + new File(dataFolder, "data.db").getAbsolutePath());
-        config.setDriverClassName("org.sqlite.JDBC");
-        config.setMaximumPoolSize(1);
-        config.addDataSourceProperty("journal_mode", "WAL");
-        this.dataSource = new HikariDataSource(config);
+        this.storageFolder = plugin.getDataFolder().toPath().resolve("storage");
     }
 
     public void init() {
-        createTables();
-        load();
+        try {
+            Files.createDirectories(storageFolder);
+        }
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to create wand storage folder: " + exception.getMessage());
+        }
         startAutosave();
     }
 
@@ -51,131 +52,111 @@ public class WandStorageManager {
         shuttingDown = true;
         stopAutosave();
         waitForSaveCompletion();
-        flushDirtySync();
-        dataSource.close();
+        flushDirty();
     }
 
-    public void createTables() {
-        String sql = "CREATE TABLE IF NOT EXISTS wand_storage (wand_id TEXT PRIMARY KEY, content TEXT)";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.execute();
-        } catch (SQLException e) {
-            ComponentUtil.error("Failed to create tables: " + e.getMessage());
-        }
-    }
-
-    public void load() {
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement("SELECT wand_id, content FROM wand_storage");
-             ResultSet rs = stmt.executeQuery()) {
-            while (rs.next()) {
-                String wandId = rs.getString("wand_id");
-                String json = rs.getString("content");
-                Wand wand = WandManager.getWandConfig(wandId);
-                if (wand != null) {
-                    WandStorage ws = storage.computeIfAbsent(wandId, k -> new WandStorage(wand));
-                    Map<Integer, ItemStack> items = serializer.deserializeMap(json);
-                    items.forEach(ws::setItem);
-                }
+    private WandStorage loadOrCreate(String wandUUID, String wandTypeId) {
+        Path file = storageFolder.resolve(wandUUID + FILE_SUFFIX);
+        if (Files.exists(file)) {
+            try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
+                String storedTypeId = in.readUTF();
+                int length = in.readInt();
+                byte[] blob = in.readNBytes(length);
+                WandStorage wandStorage = new WandStorage(storedTypeId, wandUUID);
+                serializer.deserialize(blob).forEach(wandStorage::setItem);
+                return wandStorage;
+            }
+            catch (IOException exception) {
+                ComponentUtil.error("Failed to read wand storage file " + file.getFileName() + ": " + exception.getMessage());
             }
         }
-        catch (SQLException e) {
-            ComponentUtil.error("Failed to load storage: " + e.getMessage());
-        }
+        return new WandStorage(wandTypeId, wandUUID);
     }
 
-    public synchronized WandStorage getStorage(Wand wand) {
-        return wand == null ? null : storage.computeIfAbsent(wand.getId(), k -> new WandStorage(wand));
+    public synchronized WandStorage getStorage(Wand wand, ItemStack wandItem) {
+        if (wand == null || wandItem == null) return null;
+        String wandUUID = wandItem.getItemMeta().getPersistentDataContainer().get(BuildersWand.PDC_KEY_UUID, PersistentDataType.STRING);
+        if (wandUUID == null) return null;
+        return storage.computeIfAbsent(wandUUID, key -> loadOrCreate(key, wand.getId()));
     }
 
-    public void save(Wand wand) {
+    public synchronized Optional<WandStorage> findByUUID(String wandUUID) {
+        WandStorage cached = storage.get(wandUUID);
+        if (cached != null) return Optional.of(cached);
+        Path file = storageFolder.resolve(wandUUID + FILE_SUFFIX);
+        if (!Files.exists(file)) return Optional.empty();
+        WandStorage loaded = loadOrCreate(wandUUID, null);
+        storage.put(wandUUID, loaded);
+        return Optional.of(loaded);
+    }
+
+    public void save(String wandUUID) {
         if (shuttingDown) return;
-        dirtyMap.put(wand.getId(), true);
+        dirtyMap.put(wandUUID, true);
+    }
+
+    public void saveNow(String wandUUID) {
+        if (shuttingDown) return;
+        WandStorage wandStorage = storage.get(wandUUID);
+        if (wandStorage == null) return;
+        if (writeFile(wandStorage)) {
+            dirtyMap.remove(wandUUID);
+        }
     }
 
     private void flushDirty() {
         if (saving || dirtyMap.isEmpty()) return;
-
         saving = true;
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT OR REPLACE INTO wand_storage (wand_id, content) VALUES (?, ?)")) {
-
-            for (String wandId : dirtyMap.keySet()) {
-                WandStorage ws = storage.get(wandId);
-                if (ws == null) continue;
-
-                String json = serializer.serializeMap(ws.getAllContent());
-
-                stmt.setString(1, wandId);
-                stmt.setString(2, json);
-                stmt.addBatch();
+        try {
+            for (String wandUUID : dirtyMap.keySet()) {
+                WandStorage wandStorage = storage.get(wandUUID);
+                if (wandStorage == null) continue;
+                writeFile(wandStorage);
             }
-
-            stmt.executeBatch();
             dirtyMap.clear();
-
-        }
-        catch (SQLException e) {
-            ComponentUtil.error("Failed to flush dirty storage: " + e.getMessage());
         }
         finally {
             saving = false;
         }
     }
 
-    private void flushDirtySync() {
-        if (dirtyMap.isEmpty()) return;
-
-        saving = true;
-
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(
-                     "INSERT OR REPLACE INTO wand_storage (wand_id, content) VALUES (?, ?)")) {
-
-            for (String wandId : dirtyMap.keySet()) {
-                WandStorage ws = storage.get(wandId);
-                if (ws == null) continue;
-
-                String json = serializer.serializeMap(ws.getAllContent());
-
-                stmt.setString(1, wandId);
-                stmt.setString(2, json);
-                stmt.addBatch();
-            }
-
-            stmt.executeBatch();
-            dirtyMap.clear();
-
-        } catch (SQLException e) {
-            ComponentUtil.error("Failed to flush dirty storage (sync): " + e.getMessage());
-        } finally {
-            saving = false;
+    private boolean writeFile(WandStorage wandStorage) {
+        Path target = storageFolder.resolve(wandStorage.getWandItemUUID() + FILE_SUFFIX);
+        Path temp = storageFolder.resolve(wandStorage.getWandItemUUID() + FILE_SUFFIX + ".tmp");
+        byte[] contentBlob = serializer.serialize(wandStorage.getContent());
+        try (DataOutputStream out = new DataOutputStream(Files.newOutputStream(temp))) {
+            out.writeUTF(wandStorage.getWandTypeId());
+            out.writeInt(contentBlob.length);
+            out.write(contentBlob);
         }
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to save wand storage: " + exception.getMessage());
+            return false;
+        }
+        try {
+            Files.move(temp, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to finalize wand storage save: " + exception.getMessage());
+            return false;
+        }
+        return true;
     }
 
     private void waitForSaveCompletion() {
         while (saving) {
             try {
                 Thread.sleep(5);
-            } catch (InterruptedException ignored) {
+            }
+            catch (InterruptedException ignored) {
             }
         }
     }
 
     public void startAutosave() {
         if (!ConfigManager.isWandStorageAutosaveEnabled()) return;
-
         long interval = ConfigManager.getWandStorageAutosaveIntervalSeconds() * 20L;
-
-        autosaveTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(
-                plugin,
-                this::flushDirty,
-                interval,
-                interval
-        );
+        autosaveTask = plugin.getServer().getScheduler().runTaskTimerAsynchronously(plugin, this::flushDirty, interval, interval);
     }
 
     public void stopAutosave() {
@@ -185,7 +166,79 @@ public class WandStorageManager {
         }
     }
 
-    public Collection<WandStorage> getAllStorages() {
-        return storage.values();
+    public record PruneResult(int deletedEmpty, List<String> staleNonEmpty) {}
+
+    public PruneResult pruneStale(long staleAfterMillis) {
+        int deletedEmpty = 0;
+        List<String> staleNonEmpty = new ArrayList<>();
+        if (!Files.isDirectory(storageFolder)) return new PruneResult(0, staleNonEmpty);
+        long cutoff = System.currentTimeMillis() - staleAfterMillis;
+        try (Stream<Path> files = Files.list(storageFolder)) {
+            for (Path file : files.filter(p -> p.getFileName().toString().endsWith(FILE_SUFFIX)).toList()) {
+                try {
+                    if (Files.getLastModifiedTime(file).toMillis() > cutoff) continue;
+                    String fileName = file.getFileName().toString();
+                    String wandUUID = fileName.substring(0, fileName.length() - FILE_SUFFIX.length());
+                    if (isEmptyStorageFile(file)) {
+                        Files.delete(file);
+                        storage.remove(wandUUID);
+                        deletedEmpty++;
+                    }
+                    else {
+                        staleNonEmpty.add(wandUUID);
+                    }
+                }
+                catch (IOException exception) {
+                    ComponentUtil.error("Failed to inspect wand storage file " + file.getFileName() + ": " + exception.getMessage());
+                }
+            }
+        }
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to list wand storage folder: " + exception.getMessage());
+        }
+        return new PruneResult(deletedEmpty, staleNonEmpty);
+    }
+
+    private boolean isEmptyStorageFile(Path file) throws IOException {
+        try (DataInputStream in = new DataInputStream(Files.newInputStream(file))) {
+            in.readUTF();
+            int length = in.readInt();
+            byte[] blob = in.readNBytes(length);
+            return serializer.deserialize(blob).isEmpty();
+        }
+    }
+
+    public record StorageSummary(int totalFiles, int emptyFiles, long totalBytes, long oldestModifiedMillis, long newestModifiedMillis) {}
+
+    public StorageSummary summarize() {
+        int total = 0;
+        int empty = 0;
+        long bytes = 0;
+        long oldest = Long.MAX_VALUE;
+        long newest = Long.MIN_VALUE;
+        if (!Files.isDirectory(storageFolder)) return new StorageSummary(0, 0, 0, 0, 0);
+        try (Stream<Path> files = Files.list(storageFolder)) {
+            for (Path file : files.filter(p -> p.getFileName().toString().endsWith(FILE_SUFFIX)).toList()) {
+                try {
+                    total++;
+                    bytes += Files.size(file);
+                    long modified = Files.getLastModifiedTime(file).toMillis();
+                    oldest = Math.min(oldest, modified);
+                    newest = Math.max(newest, modified);
+                    if (isEmptyStorageFile(file)) empty++;
+                }
+                catch (IOException exception) {
+                    ComponentUtil.error("Failed to inspect wand storage file " + file.getFileName() + ": " + exception.getMessage());
+                }
+            }
+        }
+        catch (IOException exception) {
+            ComponentUtil.error("Failed to list wand storage folder: " + exception.getMessage());
+        }
+        if (total == 0) {
+            oldest = 0;
+            newest = 0;
+        }
+        return new StorageSummary(total, empty, bytes, oldest, newest);
     }
 }
