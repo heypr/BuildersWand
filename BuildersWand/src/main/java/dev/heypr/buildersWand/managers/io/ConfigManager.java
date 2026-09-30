@@ -3,7 +3,8 @@ package dev.heypr.buildersWand.managers.io;
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.Updater;
 import dev.heypr.buildersWand.api.Wand;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
+import org.bukkit.Color;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
@@ -15,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 public class ConfigManager {
-    private static final String CURRENT_VERSION = "1.5.0";
+    private static final String CURRENT_VERSION = "1.6.0";
     private static boolean placementQueueEnabled;
     private static boolean fireWandBlockPlaceEvent;
     private static boolean fireWandPreviewEvent;
@@ -26,16 +27,20 @@ public class ConfigManager {
     private static boolean updaterNotifyInGame;
     private static int maxBlocksPerTick;
     private static long updaterIntervalMinutes;
+    private static boolean wandStorageEnabled;
+    private static boolean wandStorageAutosaveEnabled;
+    private static long wandStorageAutosaveIntervalSeconds;
+    private static int pruneStaleAfterDays;
 
     public static void load() {
         BuildersWand plugin = BuildersWand.getInstance();
         plugin.saveDefaultConfig();
         String fileVersion = plugin.getConfig().getString("config_version", "unknown");
         if (!fileVersion.equals(CURRENT_VERSION)) {
-            Util.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
-            Util.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
+            ComponentUtil.error("OUTDATED config.yml: Expected '" + CURRENT_VERSION + "' but found '" + fileVersion + "'.");
+            ComponentUtil.error("Please update your config.yml to the latest version. A default config.yml can be found on the plugin page and on GitHub. If you need help, please get in touch via the support Discord.");
         }
-        Util.debug("Starting ConfigManager load sequence...");
+        ComponentUtil.debug("Starting ConfigManager load sequence...");
         if (BuildersWand.getRecipeManager() != null) {
             BuildersWand.getRecipeManager().unregisterRecipes();
         }
@@ -50,7 +55,11 @@ public class ConfigManager {
         updaterIntervalMinutes = config.getLong("updater.checkIntervalMinutes", 60L);
         updaterNotifyConsole = config.getBoolean("updater.notify.console", true);
         updaterNotifyInGame = config.getBoolean("updater.notify.ingame", true);
-        Util.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
+        wandStorageEnabled = config.getBoolean("wandStorage.enabled", true);
+        wandStorageAutosaveEnabled = config.getBoolean("wandStorage.autosave.enabled", true);
+        wandStorageAutosaveIntervalSeconds = config.getLong("wandStorage.autosave.intervalSeconds", 300L);
+        pruneStaleAfterDays = config.getInt("wandStorage.pruneStaleAfterDays", 30);
+        ComponentUtil.PREFIX = MessageManager.getRegularMessage(MessageManager.Messages.PREFIX);
     }
 
     public static List<Wand> loadWandConfigs() {
@@ -58,7 +67,7 @@ public class ConfigManager {
         FileConfiguration config = BuildersWand.getInstance().getConfig();
         ConfigurationSection wandsSection = config.getConfigurationSection("wands");
         if (wandsSection == null) {
-            Util.debug("Critical: 'wands' section is missing from config.yml!");
+            ComponentUtil.debug("Critical: 'wands' section is missing from config.yml!");
             return wandList;
         }
         for (String wandId : wandsSection.getKeys(false)) {
@@ -85,7 +94,7 @@ public class ConfigManager {
                     breakSound = Sound.valueOf(breakSoundName);
                 }
                 catch (Exception e) {
-                    Util.debug("Invalid break sound for wand '" + wandId + "': " + breakSoundName + ". Defaulting to ENTITY_ITEM_BREAK.");
+                    ComponentUtil.debug("Invalid break sound for wand '" + wandId + "': " + breakSoundName + ". Defaulting to ENTITY_ITEM_BREAK.");
                     breakSound = Sound.ENTITY_ITEM_BREAK;
                 }
                 String breakSoundMessage = config.getString(path + "durability.breakSound.message", "&cYour wand broke!");
@@ -114,16 +123,16 @@ public class ConfigManager {
                 List<String> recipeShape = config.getStringList(path + "craftingRecipe.shape");
                 Map<Character, Material> recipeIngredients = new HashMap<>();
                 if (craftingRecipeEnabled) {
-                    Util.debug("Loading recipe for wand " + wandId + "...");
+                    ComponentUtil.debug("Loading recipe for wand " + wandId + "...");
                     recipeShape = config.getStringList(path + "craftingRecipe.shape");
                     if (recipeShape.isEmpty() || recipeShape.size() > 3 || recipeShape.stream().anyMatch(row -> row.length() > 3)) {
-                        Util.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
+                        ComponentUtil.error("Wand " + wandId + " has an invalid recipe shape. Disabling crafting.");
                         craftingRecipeEnabled = false;
                     }
                     else {
                         ConfigurationSection ingredientsSection = config.getConfigurationSection(path + "craftingRecipe.ingredients");
                         if (ingredientsSection == null) {
-                            Util.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
+                            ComponentUtil.error("Wand " + wandId + " has no ingredients defined. Disabling crafting.");
                             craftingRecipeEnabled = false;
                         }
                         else {
@@ -134,11 +143,11 @@ public class ConfigManager {
                                     if (materialName != null) {
                                         Material mat = Material.valueOf(materialName.toUpperCase());
                                         recipeIngredients.put(ingredientChar, mat);
-                                        Util.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
+                                        ComponentUtil.debug("Registered ingredient: " + ingredientChar + " -> " + mat.name());
                                     }
                                 }
                                 catch (IllegalArgumentException e) {
-                                    Util.error("Wand " + wandId + " invalid ingredient: " + materialName);
+                                    ComponentUtil.error("Wand " + wandId + " invalid ingredient: " + materialName);
                                     craftingRecipeEnabled = false;
                                     break;
                                 }
@@ -146,16 +155,44 @@ public class ConfigManager {
                         }
                     }
                 }
-                Wand wand = new Wand(wandId, wandName, wandMaterial, wandLore, wandType, staticLength,
-                        staticWidth, maxSize, maxSizeText, maxRayTraceDistance, consumeItems, generatePreviewOnMove,
-                        durabilityAmount, durabilityEnabled, durabilityText, breakSoundEnabled, breakSound, breakSoundMessage,
-                        previewParticle, previewParticleCount, pOffsetX, pOffsetY, pOffsetZ, pSpeed,
-                        pRed, pGreen, pBlue, pSize, cooldown, blockedMaterials,
-                        isCraftable, craftingRecipeEnabled, recipeShape, recipeIngredients, undoHistorySize, canBreakBlocksWhileCrouched);
+                Wand wand = Wand.builder(wandId)
+                        .setName(wandName)
+                        .setMaterial(wandMaterial)
+                        .setLore(wandLore)
+                        .setWandType(wandType)
+                        .setStaticLength(staticLength)
+                        .setStaticWidth(staticWidth)
+                        .setMaxSize(maxSize)
+                        .setMaxSizeText(maxSizeText)
+                        .setMaxRayTraceDistance(maxRayTraceDistance)
+                        .setConsumesItems(consumeItems)
+                        .setGeneratePreviewOnMove(generatePreviewOnMove)
+                        .setDurabilityAmount(durabilityAmount)
+                        .setDurabilityEnabled(durabilityEnabled)
+                        .setDurabilityText(durabilityText)
+                        .setBreakSoundEnabled(breakSoundEnabled)
+                        .setBreakSound(breakSound)
+                        .setBreakSoundMessage(breakSoundMessage)
+                        .setPreviewParticle(previewParticle)
+                        .setPreviewParticleCount(previewParticleCount)
+                        .setPreviewParticleOffsetX(pOffsetX)
+                        .setPreviewParticleOffsetY(pOffsetY)
+                        .setPreviewParticleOffsetZ(pOffsetZ)
+                        .setPreviewParticleSpeed(pSpeed)
+                        .setPreviewParticleColor(Color.fromRGB(pRed, pGreen, pBlue))
+                        .setPreviewParticleOptionsSize(pSize)
+                        .setCooldown(cooldown)
+                        .setBlockedMaterials(blockedMaterials)
+                        .setCraftable(isCraftable)
+                        .setCraftingRecipeEnabled(craftingRecipeEnabled)
+                        .setRecipeShape(recipeShape)
+                        .setRecipeIngredients(recipeIngredients)
+                        .setUndoHistorySize(undoHistorySize)
+                        .setCanBreakBlocksWhileCrouched(canBreakBlocksWhileCrouched).build();
                 wandList.add(wand);
             }
             catch (Exception e) {
-                Util.error("Failed to load wand: " + wandId);
+                ComponentUtil.error("Failed to load wand: " + wandId);
             }
         }
         return wandList;
@@ -208,5 +245,21 @@ public class ConfigManager {
 
     public static boolean notifyUpdateInGame() {
         return updaterNotifyInGame;
+    }
+
+    public static boolean isWandStorageEnabled() {
+        return wandStorageEnabled;
+    }
+
+    public static boolean isWandStorageAutosaveEnabled() {
+        return wandStorageAutosaveEnabled;
+    }
+
+    public static long getWandStorageAutosaveIntervalSeconds() {
+        return wandStorageAutosaveIntervalSeconds;
+    }
+
+    public static int getPruneStaleAfterDays() {
+        return pruneStaleAfterDays;
     }
 }

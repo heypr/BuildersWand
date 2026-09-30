@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'dev.heypr'
-version = '1.5.2-b' + (System.getenv("BUILD_NUMBER") ?: "DEV")
+version = '1.6.0-b' + (System.getenv("BUILD_NUMBER") ?: "DEV")
 
 repositories {
     mavenCentral()
@@ -35,7 +35,7 @@ dependencies {
     compileOnly("com.bgsoftware:SuperiorSkyblockAPI:2024.4")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.13")
     compileOnly("com.github.angeschossen:LandsAPI:7.15.4")
-    compileOnly ("world.bentobox:bentobox:3.1.1-SNAPSHOT")
+    compileOnly("world.bentobox:bentobox:3.1.1-SNAPSHOT")
     implementation project(":api")
 }
 
@@ -54,16 +54,6 @@ tasks.withType(JavaCompile).configureEach {
 
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         options.release.set(targetJavaVersion)
-    }
-}
-
-processResources {
-    def props = [version: version]
-    inputs.properties props
-    filteringCharset 'UTF-8'
-    filesMatching('plugin.yml') {
-        expand props
-        expand(["BUILD_NUMBER": System.getenv("BUILD_NUMBER")])
     }
 }
 

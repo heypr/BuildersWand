@@ -10,7 +10,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 import java.util.Objects;
 
-public class Util {
+public class ComponentUtil {
+
     public static TextComponent PREFIX;
 
     public static TextComponent toComponent(String string) {
@@ -29,14 +30,14 @@ public class Util {
         if (!ConfigManager.getDebugMode()) {
             return;
         }
-        BuildersWand.getInstance().getComponentLogger().info(Util.toComponent("[DEBUG] " + string));
+        BuildersWand.getInstance().getComponentLogger().info(ComponentUtil.toComponent("[DEBUG] " + string));
     }
 
     public static void log(String string) {
-        BuildersWand.getInstance().getComponentLogger().info(Util.toComponent(string));
+        BuildersWand.getInstance().getComponentLogger().info(ComponentUtil.toComponent(string));
     }
 
     public static void error(String string) {
-        BuildersWand.getInstance().getComponentLogger().error(Util.toComponent(string));
+        BuildersWand.getInstance().getComponentLogger().error(ComponentUtil.toComponent(string));
     }
 }

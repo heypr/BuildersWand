@@ -7,6 +7,7 @@ import dev.heypr.buildersWand.api.Wand;
 import dev.heypr.buildersWand.api.WandItem;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.WandManager;
+import dev.heypr.buildersWand.utility.WandItemUtil;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.Collection;
@@ -20,7 +21,7 @@ public class ApiImplementation extends BuildersWandAPI {
 
     @Override
     public boolean isWand(ItemStack item) {
-        return WandManager.isWand(item);
+        return WandItemUtil.isWand(item);
     }
 
     @Override
@@ -47,7 +48,7 @@ public class ApiImplementation extends BuildersWandAPI {
     @Override
     public ItemStack createWand(String wandId) {
         Wand wand = getWandById(wandId);
-        return wand != null ? WandManager.createWandItem(wand) : null;
+        return wand != null ? WandItemUtil.createWandItem(wand) : null;
     }
 
     @Override

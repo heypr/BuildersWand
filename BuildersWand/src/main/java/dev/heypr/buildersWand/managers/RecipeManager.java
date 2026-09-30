@@ -2,7 +2,8 @@ package dev.heypr.buildersWand.managers;
 
 import dev.heypr.buildersWand.BuildersWand;
 import dev.heypr.buildersWand.api.Wand;
-import dev.heypr.buildersWand.utility.Util;
+import dev.heypr.buildersWand.utility.ComponentUtil;
+import dev.heypr.buildersWand.utility.WandItemUtil;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.ItemStack;
@@ -23,17 +24,17 @@ public class RecipeManager {
         for (Wand wand : BuildersWand.getWandManager().registeredWands()) {
             if (wand.isCraftingRecipeEnabled()) {
                 NamespacedKey key = new NamespacedKey(plugin, "wand_recipe_" + wand.getId());
-                ItemStack result = WandManager.createWandItem(wand);
+                ItemStack result = WandItemUtil.createWandItem(wand);
                 ShapedRecipe recipe = new ShapedRecipe(key, result);
                 recipe.shape(wand.getRecipeShape().toArray(new String[0]));
                 for (Map.Entry<Character, Material> entry : wand.getRecipeIngredients().entrySet()) {
                     recipe.setIngredient(entry.getKey(), entry.getValue());
-                    Util.debug("Set ingredient '" + entry.getKey() + "' to " + entry.getValue());
-                    Util.debug("Current recipe shape: " + String.join(", ", wand.getRecipeShape()));
+                    ComponentUtil.debug("Set ingredient '" + entry.getKey() + "' to " + entry.getValue());
+                    ComponentUtil.debug("Current recipe shape: " + String.join(", ", wand.getRecipeShape()));
                 }
-                Util.debug("Registering crafting recipe for wand ID: " + wand.getId());
+                ComponentUtil.debug("Registering crafting recipe for wand ID: " + wand.getId());
                 plugin.getServer().addRecipe(recipe, true);
-                Util.debug("Successfully registered crafting recipe for wand ID: " + wand.getId());
+                ComponentUtil.debug("Successfully registered crafting recipe for wand ID: " + wand.getId());
             }
         }
     }

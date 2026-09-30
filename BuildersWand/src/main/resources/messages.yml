@@ -5,12 +5,12 @@
 
 # DO NOT EDIT THIS LINE!!!
 # IT IS USED TO CHECK IF THE FILE IS OUTDATED AND NEEDS TO BE UPDATED
-config_version: 1.5.0
+config_version: 1.6.0
 
 prefix: "&7[&bBuildersWand&7] &r"
 
 command:
-  usage: "&cUsage: /builderswand <reload|list|give> <id> [player]" # <-- id and player are only needed for the give command
+  usage: "&cUsage: /builderswand <reload|list|give|storage> <id> [player]"
   reload:
     success: "&aConfiguration has been reloaded."
   no-wands: "&cNo wands found."
@@ -19,6 +19,13 @@ command:
   wand-given: "&aGave {id} to {player_name}."
   only-players: "&cOnly players can give wands to themselves."
   wand-list: "&eWands: "
+  storage:
+    unavailable: "&cWand storage is not enabled."
+    not-found: "&cNo wand storage found with UUID: {uuid}"
+    list-result: "&aStorage files: &e{total} &a(&e{empty} &aempty, &e{nonempty} &anon-empty) &a- &e{size} &aon disk. Oldest: &e{oldest}&a, newest: &e{newest}&a."
+  prune:
+    result: "&aPruned &c{deleted} &aempty storage file(s). &c{stale} &astale but non-empty storage(s) found (left untouched)."
+    stale-list: "&7Stale non-empty storage UUIDs: &e{uuids}"
 
 wand:
   placing-blocks: "&7Placing blocks... &e{remaining} &7left"

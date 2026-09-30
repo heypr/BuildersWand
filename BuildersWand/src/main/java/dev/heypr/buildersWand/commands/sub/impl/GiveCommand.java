@@ -13,6 +13,7 @@ import dev.heypr.buildersWand.commands.sub.Subcommand;
 import dev.heypr.buildersWand.managers.io.ConfigManager;
 import dev.heypr.buildersWand.managers.io.MessageManager;
 import dev.heypr.buildersWand.managers.WandManager;
+import dev.heypr.buildersWand.utility.WandItemUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -78,7 +79,7 @@ public class GiveCommand implements Subcommand {
             MessageManager.sendMessage(target, MessageManager.Messages.WAND_NOT_FOUND, "wand_id", wandId);
             return Command.SINGLE_SUCCESS;
         }
-        ItemStack item = WandManager.createWandItem(wand);
+        ItemStack item = WandItemUtil.createWandItem(wand);
         target.getInventory().addItem(item);
         MessageManager.sendMessage(target, MessageManager.Messages.WAND_RECEIVED, wand);
         if (target != source.getSender()) {
